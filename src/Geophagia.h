@@ -6,6 +6,10 @@
 #include <Necrosis/renderer/Renderer.h>
 #include <Necrosis/InputManager.h>
 #include <Necrosis/scene/Camera.h>
+#include <Necrosis/renderer/Texture.h>
+#include <Necrosis/renderer/FrameBuffer.h>
+
+#include "Terrain/Terrain.h"
 
 namespace Geophagia {
 
@@ -22,6 +26,10 @@ private:
     Necrosis::Camera _camera;
     Necrosis::InputManager _input;
     std::shared_ptr<Necrosis::Shader> shader = nullptr;
+    Necrosis::TextureID _texture;
+    std::unique_ptr<Necrosis::Framebuffer> _framebuffer;
+
+    Terrain _terrain;
 };
 
 }

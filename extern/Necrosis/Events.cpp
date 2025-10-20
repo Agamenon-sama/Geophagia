@@ -28,7 +28,7 @@ void EventManager::manageEvents() {
                 _inputManager->mouse.xrel = event.motion.xrel;
                 _inputManager->mouse.yrel = event.motion.yrel;
 
-                MouseMotionEvent ev;
+                MouseMotionEvent ev{};
                 ev.x = event.motion.x;
                 ev.y = event.motion.y;
                 ev.xrel = event.motion.xrel;
@@ -38,7 +38,7 @@ void EventManager::manageEvents() {
         }
         else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
             if (_inputManager) {
-                MouseButtonEvent ev;
+                MouseButtonEvent ev{};
                 switch (event.button.button) {
                 case SDL_BUTTON_LEFT:
                     ev.button = MouseButton::Left;
@@ -68,7 +68,7 @@ void EventManager::manageEvents() {
             }
         }
         else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP) {
-            MouseButtonEvent ev;
+            MouseButtonEvent ev{};
             switch (event.button.button) {
             case SDL_BUTTON_LEFT:
                 ev.button = MouseButton::Left;
@@ -94,11 +94,15 @@ void EventManager::manageEvents() {
                 slog::warning("Unknown mouse event captured");
                 break;
             }
-            _inputManager->mouse.buttonDispatcher.enqueue(ev);
+            if (_inputManager) {
+                _inputManager->mouse.buttonDispatcher.enqueue(ev);
+            }
         }
         else if (event.type == SDL_EVENT_MOUSE_WHEEL) {
-            ScrollWheelEvent ev = { .scroll = event.wheel.y };
-            _inputManager->mouse.wheelDispatcher.enqueue(ev);
+            const ScrollWheelEvent ev = { .scroll = event.wheel.y };
+            if (_inputManager) {
+                _inputManager->mouse.wheelDispatcher.enqueue(ev);
+            }
         }
 
         ImGui_ImplSDL3_ProcessEvent(&event);

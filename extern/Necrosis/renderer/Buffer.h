@@ -1,7 +1,8 @@
 #pragma once
 
-#include <cstdint>
 #include <vector>
+
+#include <Common.h>
 
 #define GL_FLOAT 0x1406
 #define GL_UNSIGNED_INT 0x1405
@@ -14,24 +15,27 @@ namespace Necrosis {
 class VertexBuffer {
 public:
     VertexBuffer() = default;
-    VertexBuffer(const void* data, uint32_t size, uint32_t type = GL_FLOAT);
+    VertexBuffer(const void* data, u32 size, u32 type = GL_FLOAT);
     ~VertexBuffer();
 
     void bind() const;
     void unbind() const;
-    uint32_t count() const;
-private:
-    uint32_t _id;
+    void setData(const void* data, u32 size);
 
-    uint32_t _count;
+    u32 count() const;
+
+private:
+    u32 _id;
+
+    u32 _count;
 };
 
 struct VertexBufferElement {
-    uint32_t type;
-    uint32_t count;
-    uint8_t normalized;
+    u32 type;
+    u32 count;
+    u8 normalized;
 
-    static uint32_t getSizeofType(uint32_t type) {
+    static u32 getSizeofType(u32 type) {
         switch(type) {
         case GL_FLOAT:          return 4;
         case GL_UNSIGNED_INT:   return 4;
@@ -47,7 +51,7 @@ public:
     VertexBufferLayout() : _stride(0) {}
 
 
-    void push(uint32_t type, uint32_t count) {
+    void push(u32 type, u32 count) {
         uint8_t normalized = GL_TRUE;
         if(type == GL_UNSIGNED_BYTE) {
             normalized = GL_FALSE;
@@ -58,11 +62,11 @@ public:
     }
 
     const std::vector<VertexBufferElement> &getElements() const { return _elements; }
-    uint32_t getStride() const { return _stride; }
+    u32 getStride() const { return _stride; }
 
 private:
     std::vector<VertexBufferElement> _elements;
-    uint32_t _stride;
+    u32 _stride;
 };
 
 class VertexArray {
@@ -75,22 +79,24 @@ public:
     void bind() const;
     void unbind() const;
 private:
-    uint32_t _id;
+    u32 _id;
 };
 
 class IndexBuffer {
 public:
     IndexBuffer() = default;
-    IndexBuffer(const uint32_t* data, uint32_t count);
+    IndexBuffer(const u32* data, u32 count);
     ~IndexBuffer();
 
     void bind() const;
     void unbind() const;
+    void setData(const u32* data, u32 count);
 
-    uint32_t getCount() const;
+    u32 getCount() const;
+
 private:
-    uint32_t _id;
-    uint32_t _count;
+    u32 _id;
+    u32 _count;
 };
 
 }

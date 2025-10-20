@@ -49,11 +49,13 @@ Engine::Engine(const EngineInitSetup initSetup) {
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    
+    io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
+
     ImGui_ImplSDL3_InitForOpenGL(_mainWindow->getSDLWindow(), _mainWindow->getGLContext());
     ImGui_ImplOpenGL3_Init("#version 450 core");
 
     ImGui::StyleColorsDark();
+    io.Fonts->AddFontFromFileTTF("../res/fonts/Ubuntu-L.ttf", 16.0f);
 }
 
 /* void Engine::init(EngineInitSetup initSetup) {

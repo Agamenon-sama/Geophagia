@@ -26,6 +26,15 @@ void Texture::unbind() const {
 TextureManager TextureManager::instance;
 
 TextureManager::~TextureManager() {
+    // for (auto &tex : instance._textures) {
+    //     // feels bad to call glDeleteTextures to delete textures 1 by 1 in a loop
+    //     // when the function can delete them all at once if they were contiguous
+    //     // I guess my code isn't Data Oriented (TM) enough (╥﹏╥)
+    //     glDeleteTextures(1, &tex._texture);
+    // }
+}
+
+void TextureManager::destroyAll() {
     for (auto &tex : instance._textures) {
         // feels bad to call glDeleteTextures to delete textures 1 by 1 in a loop
         // when the function can delete them all at once if they were contiguous
@@ -33,6 +42,7 @@ TextureManager::~TextureManager() {
         glDeleteTextures(1, &tex._texture);
     }
 }
+
 
 TextureID TextureManager::makeTextureFromFile(const std::string &path) {
     // check if the texture is already loaded in which case return its id
@@ -102,6 +112,11 @@ void TextureManager::unbind(TextureID id) {
         }
     }
 }
+
+Texture &TextureManager::getTextureFromID(const TextureID id) {
+    return instance._textures[id];
+}
+
 
 void TextureManager::removeTexture(TextureID id) {
     auto it = std::find_if(

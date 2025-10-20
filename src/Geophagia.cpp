@@ -1,8 +1,7 @@
 #include "Geophagia.h"
-#include "Necrosis/Engine.h"
-#include "imgui.h"
+#include "Necrosis/Window.h"
 
-#include <SDL3/SDL_video.h>
+#include <SDL3/SDL_events.h>
 #include <memory>
 
 #include <glm/fwd.hpp>
@@ -10,6 +9,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glad/glad.h>
+#include <imgui/imgui.h>
 
 #include <Necrosis/renderer/Shader.h>
 #include <Necrosis/scene/Mesh.h>
@@ -32,9 +32,46 @@ void uiRender() {
     ImGui::End();
 }
 
+void renderDockSpace() {
+    const ImGuiViewport *viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(viewport->Size);
+    ImGui::SetNextWindowViewport(viewport->ID);
+    constexpr ImGuiWindowFlags windowFlags = ImGuiWindowFlags_MenuBar
+        | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize
+        | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus
+        | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_MenuBar;
+    ImGui::Begin("DockSpace", nullptr, windowFlags);
+        const ImGuiID dockSpace =  ImGui::GetID("MasterDockSpace");
+        ImGui::DockSpace(dockSpace, ImVec2(0.0f, 0.0f)/*, ImGuiDockNodeFlags_PassthruCentralNode*/);
+        if (ImGui::BeginMenuBar()) {
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("New")) { Necrosis::Window::showWarningMessageBox("This feature is not implemented yet"); }
+                if (ImGui::MenuItem("Open")) { Necrosis::Window::showWarningMessageBox("This feature is not implemented yet"); }
+                if (ImGui::MenuItem("Save")) { Necrosis::Window::showWarningMessageBox("This feature is not implemented yet"); }
+                if (ImGui::MenuItem("Save As..")) { Necrosis::Window::showWarningMessageBox("This feature is not implemented yet"); }
+                if (ImGui::MenuItem("Export")) { Necrosis::Window::showWarningMessageBox("This feature is not implemented yet"); }
+                ImGui::Separator();
+                if (ImGui::MenuItem("Exit")) {
+                    // _eventManager->appIsRunning = false;
+                    SDL_Event ev = { .type = SDL_EVENT_QUIT };
+                    SDL_PushEvent(&ev);
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Edit")) {
+                if (ImGui::MenuItem("Nothing here yet")) {}
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
+        }
+
+    ImGui::End();
+}
+
 Geophagia::Geophagia()
-        : Necrosis::Engine({ .windowTitle = "Geophagia", .windowWidth = 1280, .windowHeight = 720 })
-        , _camera(glm::vec3(0.f, 0.f, 3.f)) {
+        : Necrosis::Engine({ .windowTitle = "Geophagia", .windowWidth = 1600, .windowHeight = 900 })
+        , _camera(glm::vec3(0.f, 1.f, 3.f)), _terrain(512, 512) {
 
     _eventManager = std::make_unique<Necrosis::EventManager>(&_input);
     _renderer = std::make_unique<Necrosis::Renderer>();
@@ -46,6 +83,14 @@ Geophagia::Geophagia()
         .renderable = std::make_shared<Necrosis::Mesh>(cube),
         .shader = shader
     });
+
+    _texture = Necrosis::TextureManager::makeTextureFromFile("../res/textures/tex.png");
+    slog::info("Texture loaded: {}x{}",
+        Necrosis::TextureManager::getTextureFromID(_texture).getWidth(),
+        Necrosis::TextureManager::getTextureFromID(_texture).getHeight()
+    );
+
+    _framebuffer = std::make_unique<Necrosis::Framebuffer>(glm::ivec4(0, 0, 1280, 720));
 }
 
 void Geophagia::run() {
@@ -55,22 +100,64 @@ void Geophagia::run() {
     shader->use();
     shader->setMat4f("u_model", model);
 
+    Necrosis::TextureManager::bind(_texture, 1);
+    shader->setInt("tex", 1);
+
+    auto quad = Necrosis::Mesh::makeQuad();
+
+    auto terrainShader = Necrosis::Shader::makeFromFile("../res/shaders/terrain.glsl");
+
     while (_eventManager->appIsRunning) {
         _eventManager->manageEvents();
-        
+
+        _framebuffer->bind();
         _renderer->clear();
+        Necrosis::TextureManager::bind(_texture, 0);
+        shader->setInt("tex", 0);
 
         model = glm::rotate(model, glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        shader->use();
         shader->setMat4f("u_model", model);
 
         _renderer->renderAll();
+        terrainShader->use();
+        // terrainShader->setMat4f("u_model", model);
+        terrainShader->setMat4f("u_view", _camera.getViewMatrix());
+        terrainShader->setMat4f("u_projection", _camera.getProjMatrix());
+        _terrain.render();
+        _framebuffer->unbind();
+
+        _framebuffer->bindTexture();
+        // shader->use();
+        // shader->setMat4f("u_model", glm::mat4(1.0f));
+        // shader->setInt("tex", 0);
+
+        _renderer->clear();
+        // quad.render();
 
         startGuiFrame();
+        renderDockSpace();
         uiRender();
+        ImGui::ShowDemoWindow();
+        ImGui::Begin("Image");
+            ImGui::Image(
+                (ImTextureRef) _framebuffer->getTextureID(),
+                ImVec2((f32) _framebuffer->getWidth(), (f32) _framebuffer->getHeight()),
+                ImVec2(0, 1), ImVec2(1, 0)
+            );
+            ImGui::Image((ImTextureRef) Necrosis::TextureManager::getTextureFromID(_texture).getOpenglID(),
+                 ImVec2(
+                     (f32) Necrosis::TextureManager::getTextureFromID(_texture).getWidth(),
+                     (f32) Necrosis::TextureManager::getTextureFromID(_texture).getHeight()
+                 ),
+                 ImVec2(0, 1), ImVec2(1, 0)
+            );
+        ImGui::End();
+
+
         endGuiFrame();
 
         swapBuffers();
     }
+    Necrosis::TextureManager::destroyAll();
 }
 }

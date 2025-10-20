@@ -20,6 +20,7 @@ public:
     int getWidth() const { return _width; }
     int getHeight() const { return _height; }
     const std::filesystem::path& getFileName() const { return _filePath; }
+    u32 getOpenglID() const { return _texture; }
 
     friend class TextureManager;
 
@@ -37,8 +38,11 @@ class TextureManager {
 public:
     TextureManager(const TextureManager&) = delete;
 
+    static void destroyAll();
+
     static TextureID makeTextureFromFile(const std::string &path);
-    
+
+    static Texture& getTextureFromID(const TextureID id);
     static void removeTexture(TextureID id);
 
     static void bind(TextureID id, const u8 slot = 0);

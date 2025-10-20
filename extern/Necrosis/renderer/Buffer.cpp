@@ -5,7 +5,7 @@
 
 namespace Necrosis {
 
-VertexBuffer::VertexBuffer(const void* data, uint32_t size, uint32_t type) {
+VertexBuffer::VertexBuffer(const void* data, u32 size, u32 type) {
     glGenBuffers(1, &_id);
     glBindBuffer(GL_ARRAY_BUFFER, _id);
     glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
@@ -13,7 +13,7 @@ VertexBuffer::VertexBuffer(const void* data, uint32_t size, uint32_t type) {
     switch (type) {
     case GL_FLOAT:
     default: // todo: change later
-        _count = size / 4;
+        _count = size / (sizeof(float) * 8); // 8 is sizeof(Vertex)
         break;
     }
 }
@@ -30,7 +30,14 @@ void VertexBuffer::unbind() const {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-uint32_t VertexBuffer::count() const {
+void VertexBuffer::setData(const void* data, u32 size) {
+    bind();
+    glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+    _count = size / (sizeof(float) * 8); // I hate this
+    unbind();
+}
+
+u32 VertexBuffer::count() const {
     return _count;
 }
 
@@ -69,10 +76,10 @@ void VertexArray::unbind() const {
 
 // =====
 
-IndexBuffer::IndexBuffer(const uint32_t* data, uint32_t count) {
+IndexBuffer::IndexBuffer(const u32* data, u32 count) {
     glGenBuffers(1, &_id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _id);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(uint32_t), data, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(u32), data, GL_STATIC_DRAW);
 
     _count = count;
 }
@@ -89,6 +96,13 @@ void IndexBuffer::unbind() const {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-uint32_t IndexBuffer::getCount() const { return _count; }
+void IndexBuffer::setData(const u32* data, u32 count) {
+    bind();
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(u32), data, GL_STATIC_DRAW);
+    _count = count;
+    unbind();
+}
+
+u32 IndexBuffer::getCount() const { return _count; }
 
 }

@@ -33,7 +33,8 @@ uniform sampler2D tex;
 void main() {
     // FragColor = vec4(0.333f, 0.525f, 0.643f, 1.f);
     // vec3 color = vec3(0.333f, 0.525f, 0.1f);
-    vec3 color = vec3(0.298f, 0.118f, 0.32f);
+    // vec3 color = vec3(0.298f, 0.118f, 0.32f);
+    vec3 color = vec3(texture(tex, texCoord));
     vec3 lightPos = vec3(2.f, 6.f, 8.f);
     vec3 lightDirection = normalize(lightPos - FragPos);
     // vec3 normal = normalize(Normal);
