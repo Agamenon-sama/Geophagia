@@ -71,11 +71,14 @@ void renderDockSpace() {
 
 Geophagia::Geophagia()
         : Necrosis::Engine({ .windowTitle = "Geophagia", .windowWidth = 1600, .windowHeight = 900 })
-        , _camera(glm::vec3(0.f, 1.f, 3.f)), _terrain(512, 512) {
+        , _camera(glm::vec3(0.f, 1.f, 3.f)), _isFramebufferHovered(false), _terrain(512, 512) {
 
+    _camera.movementSpeed = 0.05f;
     _eventManager = std::make_unique<Necrosis::EventManager>(&_input);
     _renderer = std::make_unique<Necrosis::Renderer>();
     _renderer->setCamera(&_camera);
+
+    _setupMouseEventListeners();
 
     auto cube = Necrosis::Mesh::makeCube();
     shader = Necrosis::Shader::makeFromFile("../res/shaders/basic.glsl");
@@ -91,6 +94,8 @@ Geophagia::Geophagia()
     );
 
     _framebuffer = std::make_unique<Necrosis::Framebuffer>(glm::ivec4(0, 0, 1280, 720));
+
+
 }
 
 void Geophagia::run() {
@@ -109,6 +114,8 @@ void Geophagia::run() {
 
     while (_eventManager->appIsRunning) {
         _eventManager->manageEvents();
+
+        startGuiFrame();
 
         _framebuffer->bind();
         _renderer->clear();
@@ -133,8 +140,11 @@ void Geophagia::run() {
 
         _renderer->clear();
         // quad.render();
+        ImGui::Begin("Mouse");
+        ImGui::Text("Mouse: %d, %d, %d, %d", _input.mouse.x, _input.mouse.y, _input.mouse.xrel, _input.mouse.yrel);
+        ImGui::End();
 
-        startGuiFrame();
+        // startGuiFrame();
         renderDockSpace();
         uiRender();
         ImGui::ShowDemoWindow();
@@ -144,13 +154,15 @@ void Geophagia::run() {
                 ImVec2((f32) _framebuffer->getWidth(), (f32) _framebuffer->getHeight()),
                 ImVec2(0, 1), ImVec2(1, 0)
             );
-            ImGui::Image((ImTextureRef) Necrosis::TextureManager::getTextureFromID(_texture).getOpenglID(),
-                 ImVec2(
-                     (f32) Necrosis::TextureManager::getTextureFromID(_texture).getWidth(),
-                     (f32) Necrosis::TextureManager::getTextureFromID(_texture).getHeight()
-                 ),
-                 ImVec2(0, 1), ImVec2(1, 0)
-            );
+            if (ImGui::IsItemHovered()) { _isFramebufferHovered = true; }
+            else { _isFramebufferHovered = false; }
+            // ImGui::Image((ImTextureRef) Necrosis::TextureManager::getTextureFromID(_texture).getOpenglID(),
+            //      ImVec2(
+            //          (f32) Necrosis::TextureManager::getTextureFromID(_texture).getWidth(),
+            //          (f32) Necrosis::TextureManager::getTextureFromID(_texture).getHeight()
+            //      ),
+            //      ImVec2(0, 1), ImVec2(1, 0)
+            // );
         ImGui::End();
 
 
@@ -160,4 +172,43 @@ void Geophagia::run() {
     }
     Necrosis::TextureManager::destroyAll();
 }
+
+void Geophagia::_setupMouseEventListeners() {
+    _input.mouse.motionDispatcher.listen([this](Necrosis::MouseMotionEvent ev) {
+        if (!_isFramebufferHovered) return;
+
+        if (_input.mouse.buttons[(int)Necrosis::MouseButton::Middle]) {
+            if (_input.keyboard.isPressed(SDL_SCANCODE_LSHIFT)) {
+                if (ev.xrel > 0)
+                    _camera.processPosition(Necrosis::CameraMovement::Right, 7.f);
+                else if (ev.xrel < 0)
+                    _camera.processPosition(Necrosis::CameraMovement::Left, 7.f);
+
+                if (ev.yrel > 0)
+                    _camera.processPosition(Necrosis::CameraMovement::Down, 7.f);
+                else if (ev.yrel < 0)
+                    _camera.processPosition(Necrosis::CameraMovement::Up, 7.f);
+            }
+            else {
+                _camera.processAngle(ev.xrel, -ev.yrel);
+            }
+        }
+    });
+    _input.mouse.wheelDispatcher.listen([this](Necrosis::ScrollWheelEvent ev) {
+        if (!_isFramebufferHovered) return;
+        if (ev.scroll > 0.f) {
+            const auto originalSpeed = _camera.movementSpeed;
+            _camera.movementSpeed = 5.f * originalSpeed;
+            _camera.processPosition(Necrosis::CameraMovement::Forward, 7.f);
+            _camera.movementSpeed = originalSpeed;
+        }
+        else {
+            const auto originalSpeed = _camera.movementSpeed;
+            _camera.movementSpeed = 5.f * originalSpeed;
+            _camera.processPosition(Necrosis::CameraMovement::Back, 7.f);
+            _camera.movementSpeed = originalSpeed;
+        }
+    });
+}
+
 }

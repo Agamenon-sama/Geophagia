@@ -59,7 +59,7 @@ bool Keyboard::isPressed(SDL_Scancode k) const {
     return keys[k] == KeyState::Down || keys[k] == KeyState::Repeat;
 }
 
-Mouse::Mouse() : x(0), y(0), xrel(0), yrel(0) {}
+Mouse::Mouse() : x(0), y(0), xrel(0), yrel(0), buttons{false, false, false, false, false, false} {}
 
 void Mouse::setRelativeMode(bool enable) { // TODO: adapt for SDL3
     // SDL_SetRelativeMouseMode((SDL_bool) enable);

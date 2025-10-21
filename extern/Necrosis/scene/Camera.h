@@ -23,8 +23,8 @@ public:
 
     glm::mat4 getViewMatrix() const;
     glm::mat4 getProjMatrix() const;
-    void processKeyboard(CameraMovement mov, float deltaTime);
-    void processMouse(float xoffset, float yoffset);
+    void processPosition(const CameraMovement mov, const float deltaTime);
+    void processAngle(float xoffset, float yoffset);
 
 protected:
     void _updateCameraVectors();

@@ -25,11 +25,15 @@ private:
     std::unique_ptr<Necrosis::EventManager> _eventManager;
     Necrosis::Camera _camera;
     Necrosis::InputManager _input;
+    bool _isFramebufferHovered;
+
     std::shared_ptr<Necrosis::Shader> shader = nullptr;
     Necrosis::TextureID _texture;
     std::unique_ptr<Necrosis::Framebuffer> _framebuffer;
 
     Terrain _terrain;
+
+    void _setupMouseEventListeners();
 };
 
 }

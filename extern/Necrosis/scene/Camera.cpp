@@ -24,8 +24,8 @@ glm::mat4 Camera::getProjMatrix() const {
     return glm::perspective(glm::radians(fov), aspectRatio, near, far);
 }
 
-void Camera::processKeyboard(CameraMovement mov, float deltaTime) {
-    float velocity = movementSpeed * deltaTime;
+void Camera::processPosition(const CameraMovement mov, const float deltaTime) {
+    const float velocity = movementSpeed * deltaTime;
     switch (mov) {
     case CameraMovement::Forward:
         position += front * velocity;
@@ -48,7 +48,7 @@ void Camera::processKeyboard(CameraMovement mov, float deltaTime) {
     }
 }
 
-void Camera::processMouse(float xoffset, float yoffset) {
+void Camera::processAngle(float xoffset, float yoffset) {
     xoffset *= sensitivity;
     yoffset *= sensitivity;
 

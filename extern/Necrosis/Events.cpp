@@ -43,22 +43,27 @@ void EventManager::manageEvents() {
                 case SDL_BUTTON_LEFT:
                     ev.button = MouseButton::Left;
                     ev.type = MouseButtonEventType::Down;
+                    _inputManager->mouse.buttons[(int)MouseButton::Left] = true;
                     break;
                 case SDL_BUTTON_MIDDLE:
                     ev.button = MouseButton::Middle;
                     ev.type = MouseButtonEventType::Down;
+                    _inputManager->mouse.buttons[(int)MouseButton::Middle] = true;
                     break;
                 case SDL_BUTTON_RIGHT:
                     ev.button = MouseButton::Right;
                     ev.type = MouseButtonEventType::Down;
+                    _inputManager->mouse.buttons[(int)MouseButton::Right] = true;
                     break;
                 case SDL_BUTTON_X1:
                     ev.button = MouseButton::X1;
                     ev.type = MouseButtonEventType::Down;
+                    _inputManager->mouse.buttons[(int)MouseButton::X1] = true;
                     break;
                 case SDL_BUTTON_X2:
                     ev.button = MouseButton::X2;
                     ev.type = MouseButtonEventType::Down;
+                    _inputManager->mouse.buttons[(int)MouseButton::X2] = true;
                     break;
                 default:
                     slog::warning("Unknown mouse event captured");
@@ -68,33 +73,38 @@ void EventManager::manageEvents() {
             }
         }
         else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP) {
-            MouseButtonEvent ev{};
-            switch (event.button.button) {
-            case SDL_BUTTON_LEFT:
-                ev.button = MouseButton::Left;
-                ev.type = MouseButtonEventType::Up;
-                break;
-            case SDL_BUTTON_MIDDLE:
-                ev.button = MouseButton::Middle;
-                ev.type = MouseButtonEventType::Up;
-                break;
-            case SDL_BUTTON_RIGHT:
-                ev.button = MouseButton::Right;
-                ev.type = MouseButtonEventType::Up;
-                break;
-            case SDL_BUTTON_X1:
-                ev.button = MouseButton::X1;
-                ev.type = MouseButtonEventType::Up;
-                break;
-            case SDL_BUTTON_X2:
-                ev.button = MouseButton::X2;
-                ev.type = MouseButtonEventType::Up;
-                break;
-            default:
-                slog::warning("Unknown mouse event captured");
-                break;
-            }
             if (_inputManager) {
+                MouseButtonEvent ev{};
+                switch (event.button.button) {
+                case SDL_BUTTON_LEFT:
+                    ev.button = MouseButton::Left;
+                    ev.type = MouseButtonEventType::Up;
+                    _inputManager->mouse.buttons[(int)MouseButton::Left] = false;
+                    break;
+                case SDL_BUTTON_MIDDLE:
+                    ev.button = MouseButton::Middle;
+                    ev.type = MouseButtonEventType::Up;
+                    _inputManager->mouse.buttons[(int)MouseButton::Middle] = false;
+                    break;
+                case SDL_BUTTON_RIGHT:
+                    ev.button = MouseButton::Right;
+                    ev.type = MouseButtonEventType::Up;
+                    _inputManager->mouse.buttons[(int)MouseButton::Right] = false;
+                    break;
+                case SDL_BUTTON_X1:
+                    ev.button = MouseButton::X1;
+                    ev.type = MouseButtonEventType::Up;
+                    _inputManager->mouse.buttons[(int)MouseButton::X1] = false;
+                    break;
+                case SDL_BUTTON_X2:
+                    ev.button = MouseButton::X2;
+                    ev.type = MouseButtonEventType::Up;
+                    _inputManager->mouse.buttons[(int)MouseButton::X2] = false;
+                    break;
+                default:
+                    slog::warning("Unknown mouse event captured");
+                    break;
+                }
                 _inputManager->mouse.buttonDispatcher.enqueue(ev);
             }
         }

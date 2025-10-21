@@ -66,8 +66,8 @@ struct MouseMotionEvent : public Event {
 };
 
 struct MouseButtonEvent : public Event {
-    MouseButton button;
-    MouseButtonEventType type;
+    MouseButton button; ///< @brief What button is actioned
+    MouseButtonEventType type; ///< @brief Basically is it pressed or released
 };
 
 struct ScrollWheelEvent : public Event {
@@ -87,12 +87,12 @@ public:
     void setRelativeMode(bool on);
 
 public:
-    bool buttons[5];
-    
     int x;
     int y;
     int xrel;
     int yrel;
+
+    bool buttons[6];
 
     EventDispatcher<MouseMotionEvent> motionDispatcher;
     EventDispatcher<MouseButtonEvent> buttonDispatcher;
