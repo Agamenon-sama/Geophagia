@@ -2,7 +2,7 @@
 
 #include <glad/glad.h>
 
-#include "Necrosis/scene/Mesh.h"
+#include <Necrosis/scene/Mesh.h>
 
 namespace Geophagia {
 
@@ -30,8 +30,8 @@ TerrainRenderer::~TerrainRenderer() {
 
 void TerrainRenderer::render() const {
     _vao->bind();
-    _vbo->bind();
-    _ibo->bind();
+    // _vbo->bind();
+    // _ibo->bind();
 
     // glDrawArrays(GL_POINTS, 0, _vbo->count());
     glDrawElements(GL_TRIANGLES, _ibo->getCount(), GL_UNSIGNED_INT, 0);
@@ -39,6 +39,7 @@ void TerrainRenderer::render() const {
 
 void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32 width, const u32 depth) const {
     if (width == 0 || depth == 0) { return; }
+    slog::debug("creating terrain buffers with width and depth {}x{}", width, depth);
 
     // create the buffers that will be uploaded to the GPU
     std::vector<Necrosis::Vertex> vertices;
@@ -55,12 +56,13 @@ void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32
             float y = heights[z * width + x];
             // TODO: put a real normal vector  and texture coordinates
             vertices[index] = Necrosis::Vertex(
-                {(i32)x - (i32)width / 2, y, (i32)z - (i32)depth / 2}, glm::vec3(0.f, 1.f,0.f), glm::vec2(0.f)
+                {static_cast<i32>(x) - static_cast<i32>(width) / 2, y, static_cast<i32>(z) - static_cast<i32>(depth) / 2}, glm::vec3(0.f, 1.f,0.f), glm::vec2(0.f)
             );
             index++;
         }
     }
     assert(index == vertices.size() && "error when populating the vertices buffer for the terrain");
+    slog::debug("Vertices buffer size {}", vertices.size());
 
     // generate index data
     index = 0;
@@ -85,6 +87,7 @@ void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32
         }
     }
     assert(index == indices.size() && "error when populating the indices buffer for the terrain");
+    slog::debug("Indices buffer size {}", indices.size());
 
     // send data to the GPU
     _vbo->setData(vertices.data(), vertices.size() * sizeof(Necrosis::Vertex));

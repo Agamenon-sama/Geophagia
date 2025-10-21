@@ -13,10 +13,10 @@ out float elevation;
 
 void main() {
     texCoord = a_texCoord;
-    gl_Position = u_projection * u_view /** u_model*/ * vec4(a_pos, 1.0f);
+    gl_Position = u_projection * u_view /** u_model*/ * vec4(a_pos.x, a_pos.y / 4.f, a_pos.z, 1.0f);
     FragPos = vec3(/*u_model **/ vec4(a_pos, 1.f));
     Normal = /*mat3(transpose(inverse(u_model))) **/ a_normal;
-    elevation = a_pos.y / 6.f;
+    elevation = a_pos.y / 80.f;
 }
 
 // ================================

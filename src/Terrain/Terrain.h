@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <filesystem>
 
 #include <Common.h>
 #include <Necrosis/renderer/Renderer.h>
@@ -16,6 +17,7 @@ public:
     virtual ~Terrain();
 
     void render() const override;
+    bool loadRawFromFile(const std::filesystem::path &path);
 
 private:
     u32 _width;

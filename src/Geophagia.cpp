@@ -71,14 +71,23 @@ void renderDockSpace() {
 
 Geophagia::Geophagia()
         : Necrosis::Engine({ .windowTitle = "Geophagia", .windowWidth = 1600, .windowHeight = 900 })
-        , _camera(glm::vec3(0.f, 1.f, 3.f)), _isFramebufferHovered(false), _terrain(512, 512) {
+        , _camera(glm::vec3(0.f, 1.f, 3.f)), _isFramebufferHovered(false) {
 
     _camera.movementSpeed = 0.05f;
+    _camera.near = 1.f;
+    _camera.far = 1000.f;
     _eventManager = std::make_unique<Necrosis::EventManager>(&_input);
     _renderer = std::make_unique<Necrosis::Renderer>();
     _renderer->setCamera(&_camera);
 
     _setupMouseEventListeners();
+    _input.keyboard.keyDispatcher.listen([this](Necrosis::KeyboardEvent ev) {
+        static bool mode = false;
+        // I'm using 'Z' for 'W' be azerty keyboard. This is temporary
+        if (ev.state == Necrosis::KeyState::Up && ev.key == SDL_SCANCODE_Z) {
+            _renderer->setWireframeMode(mode = !mode);
+        }
+    });
 
     auto cube = Necrosis::Mesh::makeCube();
     shader = Necrosis::Shader::makeFromFile("../res/shaders/basic.glsl");
@@ -95,7 +104,7 @@ Geophagia::Geophagia()
 
     _framebuffer = std::make_unique<Necrosis::Framebuffer>(glm::ivec4(0, 0, 1280, 720));
 
-
+    _terrain.loadRawFromFile("../res/heightmap.raw");
 }
 
 void Geophagia::run() {
