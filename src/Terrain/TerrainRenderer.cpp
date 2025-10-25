@@ -90,8 +90,10 @@ void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32
     slog::debug("Indices buffer size {}", indices.size());
 
     // send data to the GPU
+    _vao->bind();
     _vbo->setData(vertices.data(), vertices.size() * sizeof(Necrosis::Vertex));
     _ibo->setData(indices.data(), indices.size());
+    _vao->unbind();
 }
 
 }

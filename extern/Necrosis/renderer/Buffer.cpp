@@ -34,7 +34,7 @@ void VertexBuffer::setData(const void* data, u32 size) {
     bind();
     glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
     _count = size / (sizeof(float) * 8); // I hate this
-    unbind();
+    // unbind();
 }
 
 u32 VertexBuffer::count() const {
@@ -100,7 +100,7 @@ void IndexBuffer::setData(const u32* data, u32 count) {
     bind();
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(u32), data, GL_STATIC_DRAW);
     _count = count;
-    unbind();
+    // unbind();
 }
 
 u32 IndexBuffer::getCount() const { return _count; }

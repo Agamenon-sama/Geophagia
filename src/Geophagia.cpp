@@ -108,6 +108,8 @@ Geophagia::Geophagia()
     if (!_terrain.loadImageFromFile("../res/Heightmap.png")) {
         exit(1);
     }
+
+    _voronoiGenerator = std::make_unique<VoronoiGenerator>(&_terrain);
 }
 
 void Geophagia::run() {
@@ -176,6 +178,8 @@ void Geophagia::run() {
             //      ImVec2(0, 1), ImVec2(1, 0)
             // );
         ImGui::End();
+
+        _voronoiGenerator->uiRender();
 
 
         endGuiFrame();

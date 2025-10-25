@@ -32,6 +32,24 @@ void Terrain::render() const {
     _renderer->render();
 }
 
+bool Terrain::loadRawFromMemory(const std::vector<f32> &heights, const u32 width, const u32 depth) {
+    if (width == 0 || depth == 0) {
+        slog::warning("The heightmap width and depth has to be greater than 0");
+        return false;
+    }
+    if (width * depth != _heights.size()) {
+        slog::warning("the size of the heightmap provided is invalid");
+        return false;
+    }
+
+    _heights = heights; // NOTE: might use std::move but heights should be &&
+    _width = width;
+    _depth = depth;
+
+    _renderer->updateBuffers(_heights, _width, _depth);
+    return true;
+}
+
 bool Terrain::loadRawFromFile(const std::filesystem::path &path) {
     std::fstream file(path, std::ios::binary | std::ios::in);
     if (!file.is_open()) {

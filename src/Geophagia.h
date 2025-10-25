@@ -10,6 +10,7 @@
 #include <Necrosis/renderer/FrameBuffer.h>
 
 #include "Terrain/Terrain.h"
+#include "Terrain/Generators/VoronoiGenerator.h"
 
 namespace Geophagia {
 
@@ -32,6 +33,7 @@ private:
     std::unique_ptr<Necrosis::Framebuffer> _framebuffer;
 
     Terrain _terrain;
+    std::unique_ptr<VoronoiGenerator> _voronoiGenerator;
 
     void _setupMouseEventListeners();
 };
