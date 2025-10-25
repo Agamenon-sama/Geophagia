@@ -104,7 +104,10 @@ Geophagia::Geophagia()
 
     _framebuffer = std::make_unique<Necrosis::Framebuffer>(glm::ivec4(0, 0, 1280, 720));
 
-    _terrain.loadRawFromFile("../res/heightmap.raw");
+    // if (!_terrain.loadRawFromFile("../res/heightmap.raw")) {
+    if (!_terrain.loadImageFromFile("../res/Heightmap.png")) {
+        exit(1);
+    }
 }
 
 void Geophagia::run() {

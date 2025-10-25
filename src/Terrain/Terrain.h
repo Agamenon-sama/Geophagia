@@ -18,6 +18,7 @@ public:
 
     void render() const override;
     bool loadRawFromFile(const std::filesystem::path &path);
+    bool loadImageFromFile(const std::filesystem::path &path);
 
 private:
     u32 _width;

@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+#include <stb/stb_image.h>
+
 namespace Geophagia {
 
 Terrain::Terrain() : _width(0), _depth(0), _renderer(std::make_unique<TerrainRenderer>()) {}
@@ -80,6 +82,39 @@ bool Terrain::loadRawFromFile(const std::filesystem::path &path) {
         return false;
     }
 
+    _renderer->updateBuffers(_heights, _width, _depth);
+    return true;
+}
+
+bool Terrain::loadImageFromFile(const std::filesystem::path &path) {
+    int width, height, channels;
+
+    stbi_set_flip_vertically_on_load(false);
+    u8 *imageBuffer = stbi_load(path.c_str(), &width, &height, &channels, 1);
+
+    if (!imageBuffer) {
+        slog::warning("Failed to load heightmap '{}'", path.string());
+        return false;
+    }
+
+    if (width <= 0 || height <= 0) {
+        slog::warning(
+            "Error loading heightmap '{}'\n"
+            "The width and depth sizes of the map must be greater than 0",
+            path.string()
+        );
+        return false;
+    }
+
+    _width = width;
+    _depth = height;
+
+    _heights.resize(_width * _depth);
+    for (u32 i = 0; i < _width * _depth; ++i) {
+        _heights[i] = imageBuffer[i];
+    }
+
+    stbi_image_free(imageBuffer);
     _renderer->updateBuffers(_heights, _width, _depth);
     return true;
 }
