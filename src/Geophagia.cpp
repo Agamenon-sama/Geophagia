@@ -110,6 +110,7 @@ Geophagia::Geophagia()
     }
 
     _voronoiGenerator = std::make_unique<VoronoiGenerator>(&_terrain);
+    _fbmGenerator = std::make_unique<FbmGenerator>(&_terrain);
 }
 
 void Geophagia::run() {
@@ -180,6 +181,7 @@ void Geophagia::run() {
         ImGui::End();
 
         _voronoiGenerator->uiRender();
+        _fbmGenerator->uiRender();
 
 
         endGuiFrame();

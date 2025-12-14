@@ -36,5 +36,6 @@ in float elevation;
 uniform sampler2D tex;
 
 void main() {
-    FragColor = vec4(elevation * vec3(0.298f, 0.118f, 0.32f), 1.f);
+//    FragColor = vec4(elevation * vec3(0.298f, 0.118f, 0.32f), 1.f);
+    FragColor = vec4(elevation * vec3(0.44f, 0.33, 0.23f), 1.f);
 }

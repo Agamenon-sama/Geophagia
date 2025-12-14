@@ -11,6 +11,7 @@
 
 #include "Terrain/Terrain.h"
 #include "Terrain/Generators/VoronoiGenerator.h"
+#include "Terrain/Generators/FbmGenerator.h"
 
 namespace Geophagia {
 
@@ -34,6 +35,7 @@ private:
 
     Terrain _terrain;
     std::unique_ptr<VoronoiGenerator> _voronoiGenerator;
+    std::unique_ptr<FbmGenerator> _fbmGenerator;
 
     void _setupMouseEventListeners();
 };
