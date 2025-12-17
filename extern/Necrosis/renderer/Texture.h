@@ -8,6 +8,13 @@
 
 namespace Necrosis {
 
+#define GL_RED 0x1903
+#define GL_GREEN 0x1904
+#define GL_BLUE 0x1905
+#define GL_ALPHA 0x1906
+#define GL_RGB 0x1907
+#define GL_RGBA 0x1908
+
 using TextureID = i32;
 
 class Texture {
@@ -16,6 +23,8 @@ public:
 
     void bind(const u8 slot = 0) const;
     void unbind() const;
+
+    void updateTexture(const u8 *data, int width, int height, u32 format);
 
     int getWidth() const { return _width; }
     int getHeight() const { return _height; }
@@ -40,6 +49,7 @@ public:
 
     static void destroyAll();
 
+    static TextureID makeTextureFromMemory(const u8 *data, int width, int height, u32 format);
     static TextureID makeTextureFromFile(const std::string &path);
 
     static Texture& getTextureFromID(const TextureID id);

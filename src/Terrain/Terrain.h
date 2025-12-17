@@ -6,6 +6,7 @@
 
 #include <Common.h>
 #include <Necrosis/renderer/Renderer.h>
+#include <Necrosis/renderer/Texture.h>
 
 #include "TerrainRenderer.h"
 
@@ -62,15 +63,25 @@ public:
      */
     bool loadImageFromFile(const std::filesystem::path &path);
 
+    void uiDrawHeightmapTexture() const;
+
     u32 getWidth() const { return _width; }
     u32 getDepth() const { return _depth; }
+    // const u32* getHeightMap() const { return _heights; }
 
 private:
     u32 _width;
     u32 _depth;
 
     std::vector<f32> _heights;
+    Necrosis::TextureID _imageView;
 
     std::unique_ptr<TerrainRenderer> _renderer = nullptr;
+
+    /**
+     * @brief updates the content of `_texture` on the gpu side with the new
+     * height values
+     */
+    void _updateImageView() const;
 };
 }

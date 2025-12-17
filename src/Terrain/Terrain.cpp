@@ -3,25 +3,51 @@
 #include <fstream>
 
 #include <stb/stb_image.h>
+#include <stb/stb_image_write.h>
+#include <imgui/imgui.h>
+#include <Necrosis/renderer/Texture.h>
 
 namespace Geophagia {
 
-Terrain::Terrain() : _width(0), _depth(0), _renderer(std::make_unique<TerrainRenderer>()) {}
+Terrain::Terrain() : _width(257), _depth(257), _renderer(std::make_unique<TerrainRenderer>()) {
+    _heights.resize(_width * _depth, 0.f);
 
-Terrain::Terrain(const u32 width, const u32 depth) : _width(width), _depth(depth), _renderer(std::make_unique<TerrainRenderer>()) {
+    _renderer->updateBuffers(_heights, _width, _depth);
+
+    // set the image view of the heightmap
+    std::vector<u8> image(_width * _depth);
+
+    for (size_t i = 0; i < image.size(); i++) {
+        image[i] = static_cast<u8>(_heights[i]);
+    }
+
+    _imageView = Necrosis::TextureManager::makeTextureFromMemory(image.data(), _width, _depth, GL_RED);
+}
+
+Terrain::Terrain(const u32 width, const u32 depth)
+    : _width(width), _depth(depth)
+    , _renderer(std::make_unique<TerrainRenderer>()) {
+
     _heights.resize(_width * _depth);
 
     for (u32 i = 0; i < _width * _depth; ++i) {
         _heights[i] = 0.0f;
     }
 
-    // for (u32 z = 0; z < depth; z++) {
-    //     for (u32 x = 0; x < width; x++) {
-    //         _heights[z * width + x] = 3.f * std::sin(0.33f * x) + 3.f;
-    //     }
-    // }
-
+    // set the buffer that contains the heightmap mesh
     _renderer->updateBuffers(_heights, _width, _depth);
+
+    // set the image view of the heightmap
+    std::vector<u8> image(_width * _depth);
+
+    for (u32 y = 0; y < _depth; y++) {
+        for (u32 x = 0; x < _width; x++) {
+            u32 cell = (x / 8 + y / 8) & 1;
+            image[y * _width + x] = cell ? 255 : 0;
+        }
+    }
+
+    _imageView = Necrosis::TextureManager::makeTextureFromMemory(image.data(), _width, _depth, GL_RED);
 }
 
 Terrain::~Terrain() {
@@ -37,7 +63,7 @@ bool Terrain::loadRawFromMemory(const std::vector<f32> &heights, const u32 width
         slog::warning("The heightmap width and depth has to be greater than 0");
         return false;
     }
-    if (width * depth != _heights.size()) {
+    if (width * depth != heights.size()) {
         slog::warning("the size of the heightmap provided is invalid");
         return false;
     }
@@ -47,6 +73,7 @@ bool Terrain::loadRawFromMemory(const std::vector<f32> &heights, const u32 width
     _depth = depth;
 
     _renderer->updateBuffers(_heights, _width, _depth);
+    _updateImageView();
     return true;
 }
 
@@ -94,13 +121,14 @@ bool Terrain::loadRawFromFile(const std::filesystem::path &path) {
         );
     }
 
-    _heights.resize(_width * _depth, 2.f);
+    _heights.resize(_width * _depth);
     if (!file.read(reinterpret_cast<char *>(_heights.data()), size)) {
         slog::warning("Failed to read from heightmap file '{}'", path.string());
         return false;
     }
 
     _renderer->updateBuffers(_heights, _width, _depth);
+    _updateImageView();
     return true;
 }
 
@@ -134,7 +162,43 @@ bool Terrain::loadImageFromFile(const std::filesystem::path &path) {
 
     stbi_image_free(imageBuffer);
     _renderer->updateBuffers(_heights, _width, _depth);
+    _updateImageView();
     return true;
+}
+
+void Terrain::_updateImageView() const {
+    std::vector<u8> image(_width * _depth);
+
+    for (size_t i = 0; i < image.size(); i++) {
+        image[i] = static_cast<u8>(_heights[i]);
+    }
+
+    auto texture = Necrosis::TextureManager::getTextureFromID(_imageView);
+    slog::debug("Updating texture with ogl id {}", texture.getOpenglID());
+    texture.updateTexture(image.data(), _width, _depth, GL_RED);
+}
+
+
+void Terrain::uiDrawHeightmapTexture() const {
+    ImGui::Begin("Heightmap");
+        ImGui::Text("Resolution: %dx%d", _width, _depth);
+        ImGui::Image(
+            Necrosis::TextureManager::getTextureFromID(_imageView).getOpenglID(),
+            ImVec2(static_cast<float>(_width), static_cast<float>(_depth))
+        );
+
+        if (ImGui::Button("Save as raw")) {} ImGui::SameLine();
+        if (ImGui::Button("Save as png")) {
+            assert(_width * _depth == _heights.size() && "The heightmap size is invalid");
+            std::vector<u8> image(_width * _depth);
+
+            for (size_t i = 0; i < image.size(); ++i) {
+                image[i] = static_cast<u8>(_heights[i]);
+            }
+
+            stbi_write_png("heightmap.png", _width, _depth, 1, image.data(), _width);
+        }
+    ImGui::End();
 }
 
 }

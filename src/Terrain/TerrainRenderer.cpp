@@ -62,7 +62,6 @@ void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32
         }
     }
     assert(index == vertices.size() && "error when populating the vertices buffer for the terrain");
-    slog::debug("Vertices buffer size {}", vertices.size());
 
     // generate index data
     index = 0;
@@ -87,7 +86,6 @@ void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32
         }
     }
     assert(index == indices.size() && "error when populating the indices buffer for the terrain");
-    slog::debug("Indices buffer size {}", indices.size());
 
     // send data to the GPU
     _vao->bind();

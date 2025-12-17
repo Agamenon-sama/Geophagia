@@ -26,7 +26,7 @@ void uiRender() {
         ImGui::BulletText("vendor: %s", (const char*)glGetString(GL_VENDOR));
         ImGui::BulletText("version: %s", (const char*)glGetString(GL_VERSION));
         ImGui::BulletText("renderer: %s", (const char*)glGetString(GL_RENDERER));
-        ImGui::BulletText("extensions: %s", (const char*)glGetString(GL_EXTENSIONS));
+        // ImGui::BulletText("extensions: %s", (const char*)glGetString(GL_EXTENSIONS));
         // ImGui::Separator();
 
     ImGui::End();
@@ -105,9 +105,9 @@ Geophagia::Geophagia()
     _framebuffer = std::make_unique<Necrosis::Framebuffer>(glm::ivec4(0, 0, 1280, 720));
 
     // if (!_terrain.loadRawFromFile("../res/heightmap.raw")) {
-    if (!_terrain.loadImageFromFile("../res/Heightmap.png")) {
-        exit(1);
-    }
+    // if (!_terrain.loadImageFromFile("../res/Heightmap.png")) {
+    //     exit(1);
+    // }
 
     _voronoiGenerator = std::make_unique<VoronoiGenerator>(&_terrain);
     _fbmGenerator = std::make_unique<FbmGenerator>(&_terrain);
@@ -148,21 +148,20 @@ void Geophagia::run() {
         _terrain.render();
         _framebuffer->unbind();
 
-        _framebuffer->bindTexture();
+        // _framebuffer->bindTexture();
         // shader->use();
         // shader->setMat4f("u_model", glm::mat4(1.0f));
         // shader->setInt("tex", 0);
 
         _renderer->clear();
         // quad.render();
-        ImGui::Begin("Mouse");
-        ImGui::Text("Mouse: %d, %d, %d, %d", _input.mouse.x, _input.mouse.y, _input.mouse.xrel, _input.mouse.yrel);
-        ImGui::End();
 
         // startGuiFrame();
         renderDockSpace();
         uiRender();
-        ImGui::ShowDemoWindow();
+
+
+        // ImGui::ShowDemoWindow();
         ImGui::Begin("Image");
             ImGui::Image(
                 (ImTextureRef) _framebuffer->getTextureID(),
@@ -179,6 +178,7 @@ void Geophagia::run() {
             //      ImVec2(0, 1), ImVec2(1, 0)
             // );
         ImGui::End();
+        _terrain.uiDrawHeightmapTexture();
 
         _voronoiGenerator->uiRender();
         _fbmGenerator->uiRender();
