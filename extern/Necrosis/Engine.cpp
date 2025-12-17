@@ -101,7 +101,6 @@ Engine::Engine(const EngineInitSetup initSetup) {
 }
 
 Engine::~Engine() {
-    slog::debug("~Engine");
 
     ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL3_Shutdown();

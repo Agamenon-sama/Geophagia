@@ -105,9 +105,9 @@ Geophagia::Geophagia()
     _framebuffer = std::make_unique<Necrosis::Framebuffer>(glm::ivec4(0, 0, 1280, 720));
 
     // if (!_terrain.loadRawFromFile("../res/heightmap.raw")) {
-    // if (!_terrain.loadImageFromFile("../res/Heightmap.png")) {
-    //     exit(1);
-    // }
+    if (!_terrain.loadImageFromFile("../res/Heightmap.png")) {
+        exit(1);
+    }
 
     _voronoiGenerator = std::make_unique<VoronoiGenerator>(&_terrain);
     _fbmGenerator = std::make_unique<FbmGenerator>(&_terrain);

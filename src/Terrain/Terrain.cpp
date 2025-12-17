@@ -6,6 +6,9 @@
 #include <stb/stb_image_write.h>
 #include <imgui/imgui.h>
 #include <Necrosis/renderer/Texture.h>
+#include <Necrosis/Window.h>
+
+#include "../UiComponents/Dialogs.h"
 
 namespace Geophagia {
 
@@ -174,31 +177,79 @@ void Terrain::_updateImageView() const {
     }
 
     auto texture = Necrosis::TextureManager::getTextureFromID(_imageView);
-    slog::debug("Updating texture with ogl id {}", texture.getOpenglID());
     texture.updateTexture(image.data(), _width, _depth, GL_RED);
 }
 
-
 void Terrain::uiDrawHeightmapTexture() const {
     ImGui::Begin("Heightmap");
+
         ImGui::Text("Resolution: %dx%d", _width, _depth);
         ImGui::Image(
             Necrosis::TextureManager::getTextureFromID(_imageView).getOpenglID(),
             ImVec2(static_cast<float>(_width), static_cast<float>(_depth))
         );
 
-        if (ImGui::Button("Save as raw")) {} ImGui::SameLine();
+        if (ImGui::Button("Save as raw")) {
+            ImGui::OpenPopup("Save as raw");
+        } ImGui::SameLine();
         if (ImGui::Button("Save as png")) {
-            assert(_width * _depth == _heights.size() && "The heightmap size is invalid");
-            std::vector<u8> image(_width * _depth);
-
-            for (size_t i = 0; i < image.size(); ++i) {
-                image[i] = static_cast<u8>(_heights[i]);
-            }
-
-            stbi_write_png("heightmap.png", _width, _depth, 1, image.data(), _width);
+            ImGui::OpenPopup("Save as png");
         }
+
+        showSaveDialog("Save as png", [&](const char filename[]) {
+            if (!saveAsPng(filename)) {
+                std::string msg = std::format("Failed to write to file '{}'", filename);
+                slog::warning(msg);
+                Necrosis::Window::showWarningMessageBox(msg);
+            }
+        });
+
+        showSaveDialog("Save as raw", [&](const char filename[]) {
+            if (!saveAsRaw(filename)) {
+                std::string msg = std::format("Failed to write to file '{}'", filename);
+                slog::warning(msg);
+                Necrosis::Window::showWarningMessageBox(msg);
+            }
+        });
+
     ImGui::End();
 }
+
+bool Terrain::saveAsPng(const std::filesystem::path &path) const {
+    assert(_width * _depth == _heights.size() && "The heightmap size is invalid");
+    std::vector<u8> image(_width * _depth);
+
+    for (size_t i = 0; i < image.size(); i++) {
+        image[i] = static_cast<u8>(_heights[i]);
+    }
+
+    if (!stbi_write_png(path.c_str(), _width, _depth, 1, image.data(), _width)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool Terrain::saveAsRaw(const std::filesystem::path &path) const {
+    assert(_width * _depth == _heights.size() && "The heightmap size is invalid");
+
+    std::fstream file(path, std::ios::binary | std::ios::out);
+    if (!file.is_open()) {
+        slog::warning("Failed to save raw heightmap file '{}'", path.string());
+        return false;
+    }
+
+    file.write(reinterpret_cast<const char*>(&_width), sizeof(_width));
+    file.write(reinterpret_cast<const char*>(&_depth), sizeof(_depth));
+
+    for (size_t i = 0; i < _heights.size(); i++) {
+        file.write(reinterpret_cast<const char*>(&_heights[i]), sizeof(f32));
+    }
+
+    return true;
+}
+
+
+
 
 }

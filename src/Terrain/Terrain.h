@@ -63,6 +63,12 @@ public:
      */
     bool loadImageFromFile(const std::filesystem::path &path);
 
+    bool saveAsPng(const std::filesystem::path &path) const;
+    bool saveAsRaw(const std::filesystem::path &path) const;
+
+    /**
+     * @brief Draws the view of the heightmap as an image
+     */
     void uiDrawHeightmapTexture() const;
 
     u32 getWidth() const { return _width; }

@@ -70,7 +70,6 @@ Window::Window(std::string title, int width, int height, bool resizable) {
 }
 
 Window::~Window() {
-    slog::debug("~window");
     free();
 }
 

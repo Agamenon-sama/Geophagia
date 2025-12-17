@@ -39,7 +39,6 @@ void TerrainRenderer::render() const {
 
 void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32 width, const u32 depth) const {
     if (width == 0 || depth == 0) { return; }
-    slog::debug("creating terrain buffers with width and depth {}x{}", width, depth);
 
     // create the buffers that will be uploaded to the GPU
     std::vector<Necrosis::Vertex> vertices;
