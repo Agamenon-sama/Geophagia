@@ -48,14 +48,36 @@ void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32
     u32 numQuads = (width - 1) * (depth - 1);
     indices.resize(numQuads * 6);
 
+    auto getHeight = [&](i32 x, i32 z) {
+        x = std::clamp(x, 0, static_cast<i32>(width) - 1);
+        z = std::clamp(z, 0, static_cast<i32>(depth) - 1);
+        return heights[z * width + x];
+    };
+
     // generate vertex data
     size_t index = 0;
     for (u32 z = 0; z < depth; z++) {
         for (u32 x = 0; x < width; x++) {
             float y = heights[z * width + x];
-            // TODO: put a real normal vector  and texture coordinates
+
+            const float hL = getHeight(static_cast<i32>(x) - 1, static_cast<i32>(z));
+            const float hR = getHeight(static_cast<i32>(x) + 1, static_cast<i32>(z));
+            const float hU = getHeight(static_cast<i32>(x), static_cast<i32>(z) - 1);
+            const float hD = getHeight(static_cast<i32>(x), static_cast<i32>(z) + 1);
+
+            const glm::vec3 normal = glm::normalize(glm::vec3(hL - hR, 2.f, hU - hD));
+
             vertices[index] = Necrosis::Vertex(
-                {static_cast<i32>(x) - static_cast<i32>(width) / 2, y, static_cast<i32>(z) - static_cast<i32>(depth) / 2}, glm::vec3(0.f, 1.f,0.f), glm::vec2(0.f)
+                {
+                    static_cast<f32>(x) - static_cast<f32>(width) / 2.f,
+                    y,
+                    static_cast<f32>(z) - static_cast<f32>(depth) / 2.f
+                },
+                normal,
+                {
+                    static_cast<f32>(x)/static_cast<f32>(width),
+                    static_cast<f32>(z)/static_cast<f32>(depth)
+                }
             );
             index++;
         }

@@ -118,7 +118,7 @@ Geophagia::Geophagia()
         .shader = shader
     });
 
-    _texture = Necrosis::TextureManager::makeTextureFromFile("../res/textures/tex.png");
+    _texture = Necrosis::TextureManager::makeTextureFromFile("../res/textures/Soil_1.jpg");
     slog::info("Texture loaded: {}x{}",
         Necrosis::TextureManager::getTextureFromID(_texture).getWidth(),
         Necrosis::TextureManager::getTextureFromID(_texture).getHeight()
