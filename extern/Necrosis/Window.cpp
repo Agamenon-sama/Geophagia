@@ -1,6 +1,7 @@
 #include "Window.h"
 
 #include <iostream>
+#include <cassert>
 
 #include <glad/glad.h>
 #include <slog/slog.h>
@@ -28,6 +29,13 @@ Window* Window::create(std::string title, int width, int height, bool resizable)
     if (!res->_glContext) {
         slog::error("Failed to create opengl context: {}", SDL_GetError());
         return nullptr;
+    }
+
+    if (!SDL_GL_SetSwapInterval(-1)) {
+        slog::warning("Failed to enable adaptive vsync: {}. Trying with vsync.", SDL_GetError());
+        if (!SDL_GL_SetSwapInterval(1)) {
+            slog::warning("Failed to enable vsync: {}. Will run with immediate updates.", SDL_GetError());
+        }
     }
 
     res->_width = width;
@@ -144,6 +152,79 @@ void Window::showErrorMessageBox(const std::string &message, const std::string &
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, title.c_str(), message.c_str(), nullptr);
 }
 
+void Window::openFileDialog(
+        std::function<void(std::string)> callback,
+        const std::vector<FileFilter> &filters, const char *defaultLocation
+    ) {
+    // we allocate the vector on the heap to insure it's alive until the callback sees it
+    // we will deallocate it later. Shut up clangd (`ー´)
+    auto sdl_filters = new std::vector<SDL_DialogFileFilter>();
+    for (const auto& f : filters) {
+        sdl_filters->push_back({f.name.c_str(), f.pattern.c_str()});
+    }
+
+    struct Context {
+        std::function<void(std::string)> userCallback;
+        std::vector<SDL_DialogFileFilter>* internalFilters;
+    };
+
+    // another heap allocation for the same reason
+    auto ctx = new Context{callback, sdl_filters};
+
+    SDL_ShowOpenFileDialog([](void *userdata, const char * const *filelist, int) {
+        assert(userdata && "WTF SDL!! userdata is null");
+        auto *ctx = static_cast<Context*>(userdata);
+
+        if (filelist && *filelist) {
+            ctx->userCallback(std::string(*filelist));
+        }
+        else {
+            ctx->userCallback("");
+            if (!filelist) {
+                slog::warning("Unexpected error getting filename: {}", SDL_GetError());
+            }
+        }
+
+        // now we can delete the heap allocated stuff
+        delete ctx->internalFilters;
+        delete ctx;
+    }, ctx, nullptr, sdl_filters->data(), (int)sdl_filters->size(), defaultLocation, false);
+}
+
+void Window::saveFileDialog(
+        std::function<void(std::string)> callback,
+        const std::vector<FileFilter> &filters, const char *defaultLocation
+    ) {
+    auto sdl_filters = new std::vector<SDL_DialogFileFilter>();
+    for (const auto& f : filters) {
+        sdl_filters->push_back({f.name.c_str(), f.pattern.c_str()});
+    }
+
+    struct Context {
+        std::function<void(std::string)> userCallback;
+        std::vector<SDL_DialogFileFilter>* internalFilters;
+    };
+
+    auto ctx = new Context{callback, sdl_filters};
+
+    SDL_ShowSaveFileDialog([](void *userdata, const char * const *filelist, int) {
+        assert(userdata && "WTF SDL!! userdata is null");
+        auto *ctx = static_cast<Context*>(userdata);
+
+        if (filelist && *filelist) {
+            ctx->userCallback(std::string(*filelist));
+        }
+        else {
+            ctx->userCallback("");
+            if (!filelist) {
+                slog::warning("Unexpected error getting filename: {}", SDL_GetError());
+            }
+        }
+
+        delete ctx->internalFilters;
+        delete ctx;
+    }, ctx, nullptr, sdl_filters->data(), (int)sdl_filters->size(), defaultLocation);
+}
 
 void Window::centerMouse() {
     SDL_WarpMouseInWindow(_window, _width / 2.f, _height / 2.f);

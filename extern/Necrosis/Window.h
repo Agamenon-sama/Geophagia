@@ -2,15 +2,34 @@
 
 #include <SDL3/SDL.h>
 #include <string>
+#include <vector>
+#include <functional>
 
 namespace Necrosis {
+
+struct FileFilter {
+    std::string name;
+    std::string pattern;
+};
 
 class Window {
 public:
     static void showInfoMessageBox(const std::string &message, const std::string &title = "Information");
     static void showWarningMessageBox(const std::string &message, const std::string &title = "Warning");
     static void showErrorMessageBox(const std::string &message, const std::string &title = "Error");
+    static void openFileDialog(
+        std::function<void(std::string)> callback,
+        const std::vector<FileFilter> &filters = std::vector<FileFilter>(0),
+        const char *defaultLocation = nullptr
+    );
+    static void saveFileDialog(
+        std::function<void(std::string)> callback,
+        const std::vector<FileFilter> &filters = std::vector<FileFilter>(0),
+        const char *defaultLocation = nullptr
+    );
 
+
+    [[nodiscard]]
     static Window* create(std::string title, int width, int height, bool resizable = true);
 
     Window() = default;

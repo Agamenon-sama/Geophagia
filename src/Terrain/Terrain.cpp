@@ -190,27 +190,25 @@ void Terrain::uiDrawHeightmapTexture() const {
         );
 
         if (ImGui::Button("Save as raw")) {
-            ImGui::OpenPopup("Save as raw");
+            Necrosis::Window::saveFileDialog([this](std::string path) {
+                if (path == "") { return; }
+                if (!saveAsRaw(path)) {
+                    std::string msg = std::format("Failed to write to file '{}'", path);
+                    slog::warning(msg);
+                    Necrosis::Window::showWarningMessageBox(msg);
+                }
+            }, {{"Raw Heightmap", ".raw"}});
         } ImGui::SameLine();
         if (ImGui::Button("Save as png")) {
-            ImGui::OpenPopup("Save as png");
+            Necrosis::Window::saveFileDialog([this](std::string path) {
+                if (path == "") { return; }
+                if (!saveAsPng(path)) {
+                    std::string msg = std::format("Failed to write to file '{}'", path);
+                    slog::warning(msg);
+                    Necrosis::Window::showWarningMessageBox(msg);
+                }
+            }, {{"PNG Image", ".png"}});
         }
-
-        showSaveDialog("Save as png", [&](const char filename[]) {
-            if (!saveAsPng(filename)) {
-                std::string msg = std::format("Failed to write to file '{}'", filename);
-                slog::warning(msg);
-                Necrosis::Window::showWarningMessageBox(msg);
-            }
-        });
-
-        showSaveDialog("Save as raw", [&](const char filename[]) {
-            if (!saveAsRaw(filename)) {
-                std::string msg = std::format("Failed to write to file '{}'", filename);
-                slog::warning(msg);
-                Necrosis::Window::showWarningMessageBox(msg);
-            }
-        });
 
     ImGui::End();
 }

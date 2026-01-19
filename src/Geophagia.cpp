@@ -32,7 +32,7 @@ void uiRender() {
     ImGui::End();
 }
 
-void renderDockSpace() {
+void Geophagia::renderDockSpace() {
     const ImGuiViewport *viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->Pos);
     ImGui::SetNextWindowSize(viewport->Size);
@@ -49,7 +49,29 @@ void renderDockSpace() {
                 if (ImGui::MenuItem("New")) { Necrosis::Window::showWarningMessageBox("This feature is not implemented yet"); }
                 if (ImGui::MenuItem("Open")) { Necrosis::Window::showWarningMessageBox("This feature is not implemented yet"); }
                 if (ImGui::MenuItem("Save")) { Necrosis::Window::showWarningMessageBox("This feature is not implemented yet"); }
-                if (ImGui::MenuItem("Save As..")) { Necrosis::Window::showWarningMessageBox("This feature is not implemented yet"); }
+                if (ImGui::BeginMenu("Save As..")) {
+                    if (ImGui::MenuItem("PNG")) {
+                        Necrosis::Window::saveFileDialog([this](std::string path) {
+                            if (path == "") { return; }
+                            if (!_terrain.saveAsPng(path)) {
+                                std::string msg = std::format("Failed to write to file '{}'", path);
+                                slog::warning(msg);
+                                Necrosis::Window::showWarningMessageBox(msg);
+                            }
+                        }, {{"PNG Image", ".png"}});
+                    }
+                    if (ImGui::MenuItem("Raw Heightmap")) {
+                        Necrosis::Window::saveFileDialog([this](std::string path) {
+                            if (path == "") { return; }
+                            if (!_terrain.saveAsRaw(path)) {
+                                std::string msg = std::format("Failed to write to file '{}'", path);
+                                slog::warning(msg);
+                                Necrosis::Window::showWarningMessageBox(msg);
+                            }
+                        }, {{"Raw Heightmap", ".raw"}});
+                    }
+                    ImGui::EndMenu();
+                }
                 if (ImGui::MenuItem("Export")) { Necrosis::Window::showWarningMessageBox("This feature is not implemented yet"); }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Exit")) {

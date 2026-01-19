@@ -22,6 +22,8 @@ public:
 
     void run();
 
+    void renderDockSpace();
+
 private:
     std::unique_ptr<Necrosis::Renderer> _renderer;
     std::unique_ptr<Necrosis::EventManager> _eventManager;
