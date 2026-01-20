@@ -33,6 +33,7 @@ private:
 
     std::shared_ptr<Necrosis::Shader> shader = nullptr;
     Necrosis::TextureID _texture;
+    Necrosis::TextureSampler _textureSampler;
     std::unique_ptr<Necrosis::Framebuffer> _framebuffer;
 
     Terrain _terrain;

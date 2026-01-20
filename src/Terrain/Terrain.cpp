@@ -24,7 +24,7 @@ Terrain::Terrain() : _width(257), _depth(257), _renderer(std::make_unique<Terrai
         image[i] = static_cast<u8>(_heights[i]);
     }
 
-    _imageView = Necrosis::TextureManager::makeTextureFromMemory(image.data(), _width, _depth, GL_RED);
+    _imageView = Necrosis::TextureManager::makeTextureFromMemory(image.data(), _width, _depth, Necrosis::PixelFormat::Luminance);
 }
 
 Terrain::Terrain(const u32 width, const u32 depth)
@@ -50,7 +50,7 @@ Terrain::Terrain(const u32 width, const u32 depth)
         }
     }
 
-    _imageView = Necrosis::TextureManager::makeTextureFromMemory(image.data(), _width, _depth, GL_RED);
+    _imageView = Necrosis::TextureManager::makeTextureFromMemory(image.data(), _width, _depth, Necrosis::PixelFormat::Luminance);
 }
 
 Terrain::~Terrain() {
@@ -177,7 +177,7 @@ void Terrain::_updateImageView() const {
     }
 
     auto texture = Necrosis::TextureManager::getTextureFromID(_imageView);
-    texture.updateTexture(image.data(), _width, _depth, GL_RED);
+    texture.updateTexture(image.data(), _width, _depth, Necrosis::PixelFormat::Luminance);
 }
 
 void Terrain::uiDrawHeightmapTexture() const {

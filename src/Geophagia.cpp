@@ -124,6 +124,8 @@ Geophagia::Geophagia()
         Necrosis::TextureManager::getTextureFromID(_texture).getHeight()
     );
 
+    _textureSampler = Necrosis::TextureSampler(Necrosis::FilterType::LinearMipmap, Necrosis::WrapMode::Mirror, 16.f);
+
     _framebuffer = std::make_unique<Necrosis::Framebuffer>(glm::ivec4(0, 0, 1280, 720));
 
     // if (!_terrain.loadRawFromFile("../res/heightmap.raw")) {
@@ -143,6 +145,7 @@ void Geophagia::run() {
     shader->setMat4f("u_model", model);
 
     Necrosis::TextureManager::bind(_texture, 1);
+    _textureSampler.bind(0);
     shader->setInt("tex", 1);
 
     auto quad = Necrosis::Mesh::makeQuad();

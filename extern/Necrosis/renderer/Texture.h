@@ -8,12 +8,38 @@
 
 namespace Necrosis {
 
-#define GL_RED 0x1903
-#define GL_GREEN 0x1904
-#define GL_BLUE 0x1905
-#define GL_ALPHA 0x1906
-#define GL_RGB 0x1907
-#define GL_RGBA 0x1908
+/**
+ * @enum PixelFormat
+ * @brief The format of the pixel of the textures.
+ */
+enum class PixelFormat : u32 {
+    Unknown, ///< @brief Undefined format. This can be a valid option depending on the function using it.
+    Luminance, ///< @brief 8bit single channel.
+    RGB, ///< @brief 8bit per channel RGB.
+    RGBA ///< @brief 8bit per channel RGBA.
+};
+
+/**
+ * @enum FilterType
+ * @brief The method used to sample textures.
+ */
+enum class FilterType : u32 {
+    Unknown,
+    Nearest,
+    Linear,
+    LinearMipmap
+};
+
+/**
+ * @enum WrapMode
+ * @brief Defines how texture coordinates outside [0, 1] are handled.
+ */
+enum class WrapMode : u32 {
+    Clamp,  ///< @brief Clamps coordinates to [0, 1], stretching edge pixels.
+    Repeat, ///< @brief Tiles the texture by repeating it in both directions.
+    Mirror  ///< @brief Tiles the texture, mirroring it every other repeat.
+};
+
 
 using TextureID = i32;
 
@@ -21,10 +47,12 @@ class Texture {
 public:
     Texture();
 
-    void bind(const u8 slot = 0) const;
+    void bind(const u8 slot = 0, const u8 unit = 0) const;
     void unbind() const;
 
-    void updateTexture(const u8 *data, int width, int height, u32 format);
+    void updateTexture(
+        const u8 *data, int width, int height, PixelFormat pixelFormat = PixelFormat::RGBA
+    );
 
     int getWidth() const { return _width; }
     int getHeight() const { return _height; }
@@ -34,11 +62,15 @@ public:
     friend class TextureManager;
 
 private:
-    Texture(std::string path, int width, int height, int bppx, u32 texture, TextureID id);
+    Texture(std::string path, int width, int height, PixelFormat format, u32 texture, TextureID id);
 
     std::filesystem::path _filePath;
-    int _width, _height, _bppx;
-    uint32_t _texture; ///< OpenGL id
+    std::string _name;
+
+    int _width, _height;
+    PixelFormat _format;
+
+    u32 _texture; ///< OpenGL id
     TextureID _id; ///< TextureManager id
 };
 
@@ -49,13 +81,17 @@ public:
 
     static void destroyAll();
 
-    static TextureID makeTextureFromMemory(const u8 *data, int width, int height, u32 format);
-    static TextureID makeTextureFromFile(const std::string &path);
+    static TextureID makeTextureFromMemory(
+        const u8 *data, int width, int height, PixelFormat format = PixelFormat::RGBA
+    );
+    static TextureID makeTextureFromFile(
+        const std::filesystem::path &path, PixelFormat format = PixelFormat::Unknown
+    );
 
     static Texture& getTextureFromID(const TextureID id);
     static void removeTexture(TextureID id);
 
-    static void bind(TextureID id, const u8 slot = 0);
+    static void bind(TextureID id, const u8 slot = 0, const u8 unit = 0);
     static void unbind(TextureID id);
 
 private:
@@ -66,6 +102,32 @@ private:
     static TextureManager instance;
 
     std::vector<Texture> _textures;
+};
+
+class TextureSampler {
+public:
+    TextureSampler() = default;
+    TextureSampler(FilterType filter, WrapMode wrap, float anisotropySamples = 1.f, std::string name = "Sampler");
+    ~TextureSampler();
+
+    TextureSampler(const TextureSampler&) = delete;
+    TextureSampler& operator=(const TextureSampler&) = delete;
+    TextureSampler(TextureSampler&&);
+    TextureSampler& operator=(TextureSampler&&);
+
+    static float getMaxAnisotropySamples();
+
+    void bind(u8 unit = 0) const;
+
+    void setAnisotropySamples(float anisotropySamples);
+
+private:
+    u32 _handle = 0;
+    std::string _name;
+
+    FilterType _filter;
+    WrapMode _wrap;
+    float _anisotropySamples;
 };
 
 }
