@@ -138,7 +138,7 @@ Geophagia::Geophagia()
 void Geophagia::run() {
     glm::mat4 model = glm::mat4(1.0f);
 
-    model = glm::rotate(model, glm::radians(15.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    // model = glm::rotate(model, glm::radians(15.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     shader->use();
     shader->setMat4f("u_model", model);
 

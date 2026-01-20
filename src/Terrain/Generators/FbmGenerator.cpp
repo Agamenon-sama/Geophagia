@@ -5,12 +5,13 @@
 #include <imgui/imgui.h>
 
 namespace Geophagia {
-FbmGenerator::FbmGenerator(Terrain *terrain) : HeightmapGenerator(terrain), _numOctaves(3) {}
+FbmGenerator::FbmGenerator(Terrain *terrain) : HeightmapGenerator(terrain), _numOctaves(3), _powerScaler(1.f) {}
 
 void FbmGenerator::uiRender() {
     ImGui::Begin("Fbm Generator");
         ImGui::InputScalar("Seed:", ImGuiDataType_U64, &_seed);
         ImGui::InputInt("Number of octaves:", &_numOctaves);
+        ImGui::SliderFloat("Power scale", &_powerScaler, 0.1f, 3.f);
         if (ImGui::Button("Generate")) {
             _generateHeightmap();
         }
@@ -58,29 +59,46 @@ void FbmGenerator::_generateHeightmap() {
 
     std::vector<f32> heights(width * depth);
 
+    float minVal = 1000.f;
+    float maxVal = -1000.f;
+
     for (u32 z = 0; z < depth; z++) {
         for (u32 x = 0; x < width; x++) {
-            float frequency = 0.01f;
+            float frequency = 0.005f;
             float amplitude = 1.f;
-            float total = 0.f;
 
             heights[z * width + x] = 0.f;
 
-            for (u8 oct = 0; oct < _numOctaves; oct++) {
+            for (int oct = 0; oct < _numOctaves; oct++) {
                 heights[z * width + x] += amplitude * ((_sample(glm::vec2(x, z) * frequency) + 1.f) * 0.5f);
-                total += amplitude;
                 amplitude *= 0.5f;
                 frequency *= 2.f;
             }
 
-            heights[z * width + x] /= total / 256.f;
+            // search for the min and max values in the heightmap
+            float noiseSum = heights[z * width + x];
+            if (noiseSum < minVal) minVal = noiseSum;
+            if (noiseSum > maxVal) maxVal = noiseSum;
         }
+    }
+
+    float range = maxVal - minVal;
+
+    for (u32 i = 0; i < width * depth; i++) {
+        // normalize between the lowest and highest value
+        float normalized = (heights[i] - minVal) / range;
+
+        float shaped = std::pow(normalized, _powerScaler);
+
+        heights[i] = shaped * 255.0f;
     }
 
     _terrain->loadRawFromMemory(heights, width, depth);
 }
 
-inline float fade(const float t) { return t * t * (3 - 2 * t); }
+inline float fade(const float t) {
+    return t * t * t * (t * (t * 6 - 15) + 10); // 6t^5 - 15t^4 + 10t^3
+}
 inline float lerp(const float p, const float q, const float t) { return p * (1 - t) + q * t; }
 
 float FbmGenerator::_sample(glm::vec2 point) const {

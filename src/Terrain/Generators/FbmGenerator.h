@@ -13,6 +13,7 @@ public:
 
 private:
     int _numOctaves;
+    float _powerScaler;
 
     std::array<glm::vec2, 256> _gradients;
     std::array<u8, 512> _permutationTable;
