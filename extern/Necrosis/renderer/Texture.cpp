@@ -287,13 +287,13 @@ TextureSampler::~TextureSampler() {
     }
 }
 
-TextureSampler::TextureSampler(TextureSampler &&other) : _handle(other._handle), _name(std::move(other._name))
+TextureSampler::TextureSampler(TextureSampler &&other) noexcept : _handle(other._handle), _name(std::move(other._name))
     , _filter(other._filter), _wrap(other._wrap), _anisotropySamples(other._anisotropySamples) {
 
     other._handle = 0;
 }
 
-TextureSampler &TextureSampler::operator=(TextureSampler &&other) {
+TextureSampler &TextureSampler::operator=(TextureSampler &&other) noexcept {
     if (this != &other) {
         if (_handle) {
             glDeleteSamplers(1, &_handle);

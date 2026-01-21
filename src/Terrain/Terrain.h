@@ -63,7 +63,22 @@ public:
      */
     bool loadImageFromFile(const std::filesystem::path &path);
 
+    /**
+     * @brief Saves the heightmap as a png image
+     *
+     * @param path Name of the file
+     * @return true on success, false on failure
+     */
     bool saveAsPng(const std::filesystem::path &path) const;
+    /**
+     * @brief Saves the heightmap in a file. The details of the file format
+     * are described in `loadRawFromFile`.
+     *
+     * @param path Name of the file
+     * @return true on success, false on failure
+     *
+     * @see loadRawFromFile
+     */
     bool saveAsRaw(const std::filesystem::path &path) const;
 
     /**

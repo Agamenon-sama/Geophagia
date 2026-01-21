@@ -26,8 +26,6 @@ void uiRender() {
         ImGui::BulletText("vendor: %s", (const char*)glGetString(GL_VENDOR));
         ImGui::BulletText("version: %s", (const char*)glGetString(GL_VERSION));
         ImGui::BulletText("renderer: %s", (const char*)glGetString(GL_RENDERER));
-        // ImGui::BulletText("extensions: %s", (const char*)glGetString(GL_EXTENSIONS));
-        // ImGui::Separator();
 
     ImGui::End();
 }
@@ -75,7 +73,6 @@ void Geophagia::renderDockSpace() {
                 if (ImGui::MenuItem("Export")) { Necrosis::Window::showWarningMessageBox("This feature is not implemented yet"); }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Exit")) {
-                    // _eventManager->appIsRunning = false;
                     SDL_Event ev = { .type = SDL_EVENT_QUIT };
                     SDL_PushEvent(&ev);
                 }
@@ -140,15 +137,8 @@ Geophagia::Geophagia()
 void Geophagia::run() {
     glm::mat4 model = glm::mat4(1.0f);
 
-    // model = glm::rotate(model, glm::radians(15.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    shader->use();
-    shader->setMat4f("u_model", model);
-
-    Necrosis::TextureManager::bind(_texture, 1);
     _textureSampler.bind(0);
     shader->setInt("tex", 1);
-
-    auto quad = Necrosis::Mesh::makeQuad();
 
     auto terrainShader = Necrosis::Shader::makeFromFile("../res/shaders/terrain.glsl");
 
@@ -159,7 +149,7 @@ void Geophagia::run() {
 
         _framebuffer->bind();
         _renderer->clear();
-        Necrosis::TextureManager::bind(_texture, 0);
+        Necrosis::TextureManager::bind(_texture, 0, 0);
         shader->setInt("tex", 0);
 
         model = glm::rotate(model, glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -173,15 +163,8 @@ void Geophagia::run() {
         _terrain.render();
         _framebuffer->unbind();
 
-        // _framebuffer->bindTexture();
-        // shader->use();
-        // shader->setMat4f("u_model", glm::mat4(1.0f));
-        // shader->setInt("tex", 0);
-
         _renderer->clear();
-        // quad.render();
 
-        // startGuiFrame();
         renderDockSpace();
         uiRender();
 
@@ -195,13 +178,6 @@ void Geophagia::run() {
             );
             if (ImGui::IsItemHovered()) { _isFramebufferHovered = true; }
             else { _isFramebufferHovered = false; }
-            // ImGui::Image((ImTextureRef) Necrosis::TextureManager::getTextureFromID(_texture).getOpenglID(),
-            //      ImVec2(
-            //          (f32) Necrosis::TextureManager::getTextureFromID(_texture).getWidth(),
-            //          (f32) Necrosis::TextureManager::getTextureFromID(_texture).getHeight()
-            //      ),
-            //      ImVec2(0, 1), ImVec2(1, 0)
-            // );
         ImGui::End();
         _terrain.uiDrawHeightmapTexture();
 
@@ -223,17 +199,17 @@ void Geophagia::_setupMouseEventListeners() {
         if (_input.mouse.buttons[(int)Necrosis::MouseButton::Middle]) {
             if (_input.keyboard.isPressed(SDL_SCANCODE_LSHIFT)) {
                 if (ev.xrel > 0)
-                    _camera.processPosition(Necrosis::CameraMovement::Right, 7.f);
-                else if (ev.xrel < 0)
                     _camera.processPosition(Necrosis::CameraMovement::Left, 7.f);
+                else if (ev.xrel < 0)
+                    _camera.processPosition(Necrosis::CameraMovement::Right, 7.f);
 
                 if (ev.yrel > 0)
-                    _camera.processPosition(Necrosis::CameraMovement::Down, 7.f);
-                else if (ev.yrel < 0)
                     _camera.processPosition(Necrosis::CameraMovement::Up, 7.f);
+                else if (ev.yrel < 0)
+                    _camera.processPosition(Necrosis::CameraMovement::Down, 7.f);
             }
             else {
-                _camera.processAngle(ev.xrel, -ev.yrel);
+                _camera.processAngle(static_cast<f32>(ev.xrel), static_cast<f32>(-ev.yrel));
             }
         }
     });

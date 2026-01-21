@@ -104,6 +104,9 @@ private:
     std::vector<Texture> _textures;
 };
 
+/**
+ * @brief Contains the sampling information like the wrap mode and filter type
+ */
 class TextureSampler {
 public:
     TextureSampler() = default;
@@ -112,22 +115,35 @@ public:
 
     TextureSampler(const TextureSampler&) = delete;
     TextureSampler& operator=(const TextureSampler&) = delete;
-    TextureSampler(TextureSampler&&);
-    TextureSampler& operator=(TextureSampler&&);
+    TextureSampler(TextureSampler&&) noexcept;
+    TextureSampler& operator=(TextureSampler&&) noexcept;
 
+    /**
+     * @return The maximum anisotropy samples supported by the platform.
+     */
     static float getMaxAnisotropySamples();
 
+    /**
+     * @brief To apply a sampler to a texture, you have to bind both the sampler
+     * and the texture to the same unit.
+     * @param unit ID of the unit the sampler is to be bound to.
+     */
     void bind(u8 unit = 0) const;
 
+    /**
+     * @brief Sets the number of anisotropy samples. The actual number applied is the minimum between
+     * the desired number and the maximum supported by the platform.
+     * @param anisotropySamples The number of anisotropy samples
+     */
     void setAnisotropySamples(float anisotropySamples);
 
 private:
     u32 _handle = 0;
     std::string _name;
 
-    FilterType _filter;
-    WrapMode _wrap;
-    float _anisotropySamples;
+    FilterType _filter = FilterType::LinearMipmap;
+    WrapMode _wrap = WrapMode::Clamp;
+    float _anisotropySamples = 1.f;
 };
 
 }
