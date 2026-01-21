@@ -12,10 +12,13 @@
 
 namespace Geophagia {
 
-Terrain::Terrain() : _width(257), _depth(257), _renderer(std::make_unique<TerrainRenderer>()) {
+Terrain::Terrain() : _width(256), _depth(256), _texture(-1)
+    , _sampler(Necrosis::TextureSampler(Necrosis::FilterType::LinearMipmap, Necrosis::WrapMode::Mirror, 16.f, "Terrain sampler"))
+    , _textureScale(1.f), _renderer(std::make_unique<TerrainRenderer>()) {
+
     _heights.resize(_width * _depth, 0.f);
 
-    _renderer->updateBuffers(_heights, _width, _depth);
+    _renderer->updateBuffers(_heights, _width, _depth, _textureScale);
 
     // set the image view of the heightmap
     std::vector<u8> image(_width * _depth);
@@ -28,8 +31,9 @@ Terrain::Terrain() : _width(257), _depth(257), _renderer(std::make_unique<Terrai
 }
 
 Terrain::Terrain(const u32 width, const u32 depth)
-    : _width(width), _depth(depth)
-    , _renderer(std::make_unique<TerrainRenderer>()) {
+    : _width(width), _depth(depth), _texture(-1)
+    , _sampler(Necrosis::TextureSampler(Necrosis::FilterType::LinearMipmap, Necrosis::WrapMode::Mirror, 16.f, "Terrain sampler"))
+    , _textureScale(1.f), _renderer(std::make_unique<TerrainRenderer>()) {
 
     _heights.resize(_width * _depth);
 
@@ -38,7 +42,7 @@ Terrain::Terrain(const u32 width, const u32 depth)
     }
 
     // set the buffer that contains the heightmap mesh
-    _renderer->updateBuffers(_heights, _width, _depth);
+    _renderer->updateBuffers(_heights, _width, _depth, _textureScale);
 
     // set the image view of the heightmap
     std::vector<u8> image(_width * _depth);
@@ -58,6 +62,8 @@ Terrain::~Terrain() {
 }
 
 void Terrain::render() const {
+    Necrosis::TextureManager::bind(_texture, 0, 0);
+    _sampler.bind(0);
     _renderer->render();
 }
 
@@ -75,7 +81,7 @@ bool Terrain::loadRawFromMemory(const std::vector<f32> &heights, const u32 width
     _width = width;
     _depth = depth;
 
-    _renderer->updateBuffers(_heights, _width, _depth);
+    _renderer->updateBuffers(_heights, _width, _depth, _textureScale);
     _updateImageView();
     return true;
 }
@@ -130,7 +136,7 @@ bool Terrain::loadRawFromFile(const std::filesystem::path &path) {
         return false;
     }
 
-    _renderer->updateBuffers(_heights, _width, _depth);
+    _renderer->updateBuffers(_heights, _width, _depth, _textureScale);
     _updateImageView();
     return true;
 }
@@ -164,7 +170,7 @@ bool Terrain::loadImageFromFile(const std::filesystem::path &path) {
     }
 
     stbi_image_free(imageBuffer);
-    _renderer->updateBuffers(_heights, _width, _depth);
+    _renderer->updateBuffers(_heights, _width, _depth, _textureScale);
     _updateImageView();
     return true;
 }
@@ -178,6 +184,16 @@ void Terrain::_updateImageView() const {
 
     auto texture = Necrosis::TextureManager::getTextureFromID(_imageView);
     texture.updateTexture(image.data(), _width, _depth, Necrosis::PixelFormat::Luminance);
+}
+
+void Terrain::uiRender() {
+    const int step = 1;
+    const int fastStep = 10;
+    ImGui::Begin("Terrain");
+        ImGui::InputScalar("Width", ImGuiDataType_U32, &_width, &step, &fastStep);
+        ImGui::InputScalar("Depth", ImGuiDataType_U32, &_depth, &step, &fastStep);
+        ImGui::SliderFloat("Texture scale", &_textureScale, 0.1f, 3.f);
+    ImGui::End();
 }
 
 void Terrain::uiDrawHeightmapTexture() const {

@@ -31,9 +31,6 @@ private:
     Necrosis::InputManager _input;
     bool _isFramebufferHovered;
 
-    std::shared_ptr<Necrosis::Shader> shader = nullptr;
-    Necrosis::TextureID _texture;
-    Necrosis::TextureSampler _textureSampler;
     std::unique_ptr<Necrosis::Framebuffer> _framebuffer;
 
     Terrain _terrain;

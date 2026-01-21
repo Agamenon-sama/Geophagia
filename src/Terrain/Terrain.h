@@ -86,6 +86,10 @@ public:
      */
     void uiDrawHeightmapTexture() const;
 
+    void uiRender();
+
+    void setTexture(Necrosis::TextureID texture) { _texture = texture; }
+
     u32 getWidth() const { return _width; }
     u32 getDepth() const { return _depth; }
     // const u32* getHeightMap() const { return _heights; }
@@ -96,6 +100,10 @@ private:
 
     std::vector<f32> _heights;
     Necrosis::TextureID _imageView;
+
+    Necrosis::TextureID _texture;
+    Necrosis::TextureSampler _sampler;
+    float _textureScale;
 
     std::unique_ptr<TerrainRenderer> _renderer = nullptr;
 

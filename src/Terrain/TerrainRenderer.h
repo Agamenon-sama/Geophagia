@@ -15,7 +15,7 @@ public:
 
     void render() const override;
 
-    void updateBuffers(const std::vector<float> &heights, const u32 width, const u32 depth) const;
+    void updateBuffers(const std::vector<float> &heights, const u32 width, const u32 depth, const float textureScale) const;
 
 private:
     std::unique_ptr<Necrosis::VertexArray> _vao;

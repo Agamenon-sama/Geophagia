@@ -37,7 +37,7 @@ void TerrainRenderer::render() const {
     glDrawElements(GL_TRIANGLES, _ibo->getCount(), GL_UNSIGNED_INT, 0);
 }
 
-void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32 width, const u32 depth) const {
+void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32 width, const u32 depth, const float textureScale) const {
     if (width == 0 || depth == 0) { return; }
 
     // create the buffers that will be uploaded to the GPU
@@ -75,8 +75,8 @@ void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32
                 },
                 normal,
                 {
-                    static_cast<f32>(x)/static_cast<f32>(width),
-                    static_cast<f32>(z)/static_cast<f32>(depth)
+                    textureScale * static_cast<f32>(x)/static_cast<f32>(width),
+                    textureScale * static_cast<f32>(z)/static_cast<f32>(depth)
                 }
             );
             index++;

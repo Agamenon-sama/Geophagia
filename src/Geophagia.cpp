@@ -17,7 +17,7 @@
 namespace Geophagia {
 
 void uiRender() {
-    ImGui::Begin("New window");
+    ImGui::Begin("Renderer");
 
         ImGui::Text("last frame: %.3f ms, fps: %.3f", 1000.f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         ImGui::Separator();
@@ -26,6 +26,7 @@ void uiRender() {
         ImGui::BulletText("vendor: %s", (const char*)glGetString(GL_VENDOR));
         ImGui::BulletText("version: %s", (const char*)glGetString(GL_VERSION));
         ImGui::BulletText("renderer: %s", (const char*)glGetString(GL_RENDERER));
+        ImGui::BulletText("anisotropy samples supported: %.0fx", Necrosis::TextureSampler::getMaxAnisotropySamples());
 
     ImGui::End();
 }
@@ -108,20 +109,11 @@ Geophagia::Geophagia()
         }
     });
 
-    auto cube = Necrosis::Mesh::makeCube();
-    shader = Necrosis::Shader::makeFromFile("../res/shaders/basic.glsl");
-    _renderer->addRenderCommand({
-        .renderable = std::make_shared<Necrosis::Mesh>(cube),
-        .shader = shader
-    });
-
-    _texture = Necrosis::TextureManager::makeTextureFromFile("../res/textures/Soil_1.jpg");
+    auto texture = Necrosis::TextureManager::makeTextureFromFile("../res/textures/Soil_1.jpg");
     slog::info("Texture loaded: {}x{}",
-        Necrosis::TextureManager::getTextureFromID(_texture).getWidth(),
-        Necrosis::TextureManager::getTextureFromID(_texture).getHeight()
+        Necrosis::TextureManager::getTextureFromID(texture).getWidth(),
+        Necrosis::TextureManager::getTextureFromID(texture).getHeight()
     );
-
-    _textureSampler = Necrosis::TextureSampler(Necrosis::FilterType::LinearMipmap, Necrosis::WrapMode::Mirror, 16.f);
 
     _framebuffer = std::make_unique<Necrosis::Framebuffer>(glm::ivec4(0, 0, 1280, 720));
 
@@ -130,17 +122,15 @@ Geophagia::Geophagia()
         exit(1);
     }
 
+    _terrain.setTexture(texture);
+
     _voronoiGenerator = std::make_unique<VoronoiGenerator>(&_terrain);
     _fbmGenerator = std::make_unique<FbmGenerator>(&_terrain);
 }
 
 void Geophagia::run() {
-    glm::mat4 model = glm::mat4(1.0f);
-
-    _textureSampler.bind(0);
-    shader->setInt("tex", 1);
-
     auto terrainShader = Necrosis::Shader::makeFromFile("../res/shaders/terrain.glsl");
+    terrainShader->setInt("tex", 0);
 
     while (_eventManager->appIsRunning) {
         _eventManager->manageEvents();
@@ -149,11 +139,6 @@ void Geophagia::run() {
 
         _framebuffer->bind();
         _renderer->clear();
-        Necrosis::TextureManager::bind(_texture, 0, 0);
-        shader->setInt("tex", 0);
-
-        model = glm::rotate(model, glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        shader->setMat4f("u_model", model);
 
         _renderer->renderAll();
         terrainShader->use();
@@ -180,6 +165,7 @@ void Geophagia::run() {
             else { _isFramebufferHovered = false; }
         ImGui::End();
         _terrain.uiDrawHeightmapTexture();
+        _terrain.uiRender();
 
         _voronoiGenerator->uiRender();
         _fbmGenerator->uiRender();
