@@ -1,5 +1,7 @@
 #include "TerrainRenderer.h"
 
+#include <iostream>
+
 #include <glad/glad.h>
 
 #include <Necrosis/scene/Mesh.h>
@@ -21,6 +23,19 @@ TerrainRenderer::TerrainRenderer() {
     _vao->addBuffer(*_vbo, layout);
 
     _vao->unbind();
+
+    // _normalVao = std::make_unique<Necrosis::VertexArray>();
+    // _normalVao->bind();
+    // _normalVbo = std::make_unique<Necrosis::VertexBuffer>(nullptr, 0, GL_FLOAT);
+    // _normalVbo->bind();
+    //
+    // Necrosis::VertexBufferLayout normalLayout;
+    // normalLayout.push(GL_FLOAT, 3);
+    // normalLayout.push(GL_FLOAT, 3);
+    // normalLayout.push(GL_FLOAT, 2);
+    // _normalVao->addBuffer(*_normalVbo, normalLayout);
+    //
+    // _normalVao->unbind();
 }
 
 TerrainRenderer::~TerrainRenderer() {
@@ -35,6 +50,12 @@ void TerrainRenderer::render() const {
 
     // glDrawArrays(GL_POINTS, 0, _vbo->count());
     glDrawElements(GL_TRIANGLES, _ibo->getCount(), GL_UNSIGNED_INT, 0);
+    _vao->unbind();
+
+//     glLineWidth(2.f);
+//     _normalVao->bind();
+//     glDrawArrays(GL_LINES, 0, _normalVbo->count());
+//     glLineWidth(1.f);
 }
 
 void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32 width, const u32 depth, const float textureScale) const {
@@ -53,6 +74,8 @@ void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32
         z = std::clamp(z, 0, static_cast<i32>(depth) - 1);
         return heights[z * width + x];
     };
+
+    // std::vector<Necrosis::Vertex> normalLines;
 
     // generate vertex data
     size_t index = 0;
@@ -79,6 +102,10 @@ void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32
                     textureScale * static_cast<f32>(z)/static_cast<f32>(depth)
                 }
             );
+
+            // normalLines.emplace_back(Necrosis::Vertex(vertices[index].position, {}, {}));
+            // normalLines.emplace_back(Necrosis::Vertex(vertices[index].position + normal, {}, {}));
+
             index++;
         }
     }
@@ -113,6 +140,10 @@ void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32
     _vbo->setData(vertices.data(), vertices.size() * sizeof(Necrosis::Vertex));
     _ibo->setData(indices.data(), indices.size());
     _vao->unbind();
+
+    // _normalVao->bind();
+    // _normalVbo->setData(normalLines.data(), normalLines.size() * sizeof(Necrosis::Vertex));
+    // _normalVao->unbind();
 }
 
 }

@@ -21,5 +21,8 @@ private:
     std::unique_ptr<Necrosis::VertexArray> _vao;
     std::unique_ptr<Necrosis::VertexBuffer> _vbo;
     std::unique_ptr<Necrosis::IndexBuffer> _ibo;
+
+    // std::unique_ptr<Necrosis::VertexArray> _normalVao;
+    // std::unique_ptr<Necrosis::VertexBuffer> _normalVbo;
 };
 }  // Geophagia

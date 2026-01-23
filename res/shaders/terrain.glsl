@@ -46,4 +46,5 @@ void main() {
     vec3 colour = texture(tex, texCoord).rgb;
 
     FragColor = vec4(colour * brightness, 1.f);
+    // FragColor = vec4(normal, 1.f);
 }
