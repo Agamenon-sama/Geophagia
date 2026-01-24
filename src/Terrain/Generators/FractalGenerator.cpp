@@ -1,28 +1,34 @@
-#include "FbmGenerator.h"
+#include "FractalGenerator.h"
 
 #include <random>
 
 #include <imgui/imgui.h>
 
 namespace Geophagia {
-FbmGenerator::FbmGenerator(Terrain *terrain) : HeightmapGenerator(terrain), _numOctaves(3), _powerScaler(1.f) {}
+FractalGenerator::FractalGenerator(Terrain *terrain) : HeightmapGenerator(terrain), _numOctaves(3), _powerScaler(1.f)
+    , _persistence(0.5f), _lacunarity(2.f) {}
 
-void FbmGenerator::uiRender() {
-    ImGui::Begin("Fbm Generator");
-        ImGui::InputScalar("Seed:", ImGuiDataType_U64, &_seed);
-        ImGui::InputInt("Number of octaves:", &_numOctaves);
+void FractalGenerator::uiRender() {
+    ImGui::Begin("Fractal Generator");
+        ImGui::InputScalar("Seed", ImGuiDataType_U64, &_seed);
+        ImGui::InputInt("Number of octaves", &_numOctaves);
         ImGui::SliderFloat("Power scale", &_powerScaler, 0.1f, 3.f);
-        if (ImGui::Button("Generate")) {
-            _generateHeightmap();
+        ImGui::SliderFloat("Persistence", &_persistence, 0.01f, 1.f);
+        ImGui::SliderFloat("Lacunarity", &_lacunarity, 1.5f, 3.f);
+        if (ImGui::Button("Generate fractal brownian motion")) {
+            _generateHeightmap(0);
+        }
+        if (ImGui::Button("Generate ridged multi-fractal")) {
+            _generateHeightmap(1);
         }
     ImGui::End();
 }
 
-int FbmGenerator::_hash(const int x, const int y) const {
+int FractalGenerator::_hash(const int x, const int y) const {
     return _permutationTable[_permutationTable[(x & 0xff)] + (y & 0xff)];
 }
 
-void FbmGenerator::_generateHeightmap() {
+void FractalGenerator::_generateHeightmap(int algo) {
     if (!_terrain) {
         slog::warning("No terrain was assigned to this heightmap generator");
         return;
@@ -62,23 +68,54 @@ void FbmGenerator::_generateHeightmap() {
     float minVal = 1000.f;
     float maxVal = -1000.f;
 
-    for (u32 z = 0; z < depth; z++) {
-        for (u32 x = 0; x < width; x++) {
-            float frequency = 0.005f;
-            float amplitude = 1.f;
+    if (algo == 0) {
+        for (u32 z = 0; z < depth; z++) {
+            for (u32 x = 0; x < width; x++) {
+                float frequency = 0.005f;
+                float amplitude = 1.f;
 
-            heights[z * width + x] = 0.f;
+                heights[z * width + x] = 0.f;
 
-            for (int oct = 0; oct < _numOctaves; oct++) {
-                heights[z * width + x] += amplitude * ((_sample(glm::vec2(x, z) * frequency) + 1.f) * 0.5f);
-                amplitude *= 0.5f;
-                frequency *= 2.f;
+                for (int oct = 0; oct < _numOctaves; oct++) {
+                    heights[z * width + x] += amplitude * ((_sample(glm::vec2(x, z) * frequency) + 1.f) * 0.5f);
+                    amplitude *= _persistence;
+                    frequency *= _lacunarity;
+                }
+
+                // search for the min and max values in the heightmap
+                float noiseSum = heights[z * width + x];
+                if (noiseSum < minVal) minVal = noiseSum;
+                if (noiseSum > maxVal) maxVal = noiseSum;
             }
+        }
+    }
+    else if (algo == 1) {
+        for (u32 z = 0; z < depth; z++) {
+            for (u32 x = 0; x < width; x++) {
+                float frequency = 0.005f;
+                float amplitude = 1.f;
+                float noiseSum = 0.f;
+                float weight = 1.f;
 
-            // search for the min and max values in the heightmap
-            float noiseSum = heights[z * width + x];
-            if (noiseSum < minVal) minVal = noiseSum;
-            if (noiseSum > maxVal) maxVal = noiseSum;
+                for (int oct = 0; oct < _numOctaves; oct++) {
+                    // n between [-1.f, 1.f]
+                    float n = _sample(glm::vec2(x, z) * frequency);
+                    float ridge = 1.f - std::abs(n);
+
+                    ridge *= weight;
+                    weight = std::clamp(ridge, 0.f, 1.f);
+
+                    noiseSum += ridge * amplitude;
+
+                    amplitude *= _persistence;
+                    frequency *= _lacunarity;
+                }
+
+                heights[z * width + x] = noiseSum;
+
+                if (noiseSum < minVal) minVal = noiseSum;
+                if (noiseSum > maxVal) maxVal = noiseSum;
+            }
         }
     }
 
@@ -90,7 +127,7 @@ void FbmGenerator::_generateHeightmap() {
 
         float shaped = std::pow(normalized, _powerScaler);
 
-        heights[i] = shaped * 255.0f;
+        heights[i] = shaped * 255.f;
     }
 
     _terrain->loadRawFromMemory(heights, width, depth);
@@ -101,7 +138,7 @@ inline float fade(const float t) {
 }
 inline float lerp(const float p, const float q, const float t) { return p * (1 - t) + q * t; }
 
-float FbmGenerator::_sample(glm::vec2 point) const {
+float FractalGenerator::_sample(glm::vec2 point) const {
     // coordinates on the grid
     int x0 = static_cast<int>(std::floor(point.x)) & 0xff;
     int y0 = static_cast<int>(std::floor(point.y)) & 0xff;

@@ -91,7 +91,7 @@ void Geophagia::renderDockSpace() {
 
 Geophagia::Geophagia()
         : Necrosis::Engine({ .windowTitle = "Geophagia", .windowWidth = 1600, .windowHeight = 900 })
-        , _camera(glm::vec3(0.f, 1.f, 3.f)), _isFramebufferHovered(false) {
+        , _camera(glm::vec3(10.f, 50.f, 25.f)), _isFramebufferHovered(false) {
 
     _camera.movementSpeed = 0.05f;
     _camera.near = 1.f;
@@ -125,7 +125,7 @@ Geophagia::Geophagia()
     _terrain.setTexture(texture);
 
     _voronoiGenerator = std::make_unique<VoronoiGenerator>(&_terrain);
-    _fbmGenerator = std::make_unique<FbmGenerator>(&_terrain);
+    _fractalGenerator = std::make_unique<FractalGenerator>(&_terrain);
 }
 
 void Geophagia::run() {
@@ -168,7 +168,7 @@ void Geophagia::run() {
         _terrain.uiRender();
 
         _voronoiGenerator->uiRender();
-        _fbmGenerator->uiRender();
+        _fractalGenerator->uiRender();
 
 
         endGuiFrame();

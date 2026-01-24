@@ -14,8 +14,8 @@ VoronoiGenerator::~VoronoiGenerator() {}
 void VoronoiGenerator::uiRender() {
     ImGui::Begin("Voronoi Generator");
 
-        ImGui::InputScalar("Seed:", ImGuiDataType_U64, &_seed);
-        ImGui::InputInt("Number of centroids:", &_numCentroids);
+        ImGui::InputScalar("Seed", ImGuiDataType_U64, &_seed);
+        ImGui::InputInt("Number of centroids", &_numCentroids);
         if (ImGui::Button("Generate")) {
             _generateHeightmap();
         }
