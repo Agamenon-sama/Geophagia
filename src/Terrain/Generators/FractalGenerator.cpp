@@ -14,7 +14,7 @@ void FractalGenerator::uiRender() {
         ImGui::InputInt("Number of octaves", &_numOctaves);
         ImGui::SliderFloat("Power scale", &_powerScaler, 0.1f, 3.f);
         ImGui::SliderFloat("Persistence", &_persistence, 0.01f, 1.f);
-        ImGui::SliderFloat("Lacunarity", &_lacunarity, 1.5f, 3.f);
+        ImGui::SliderFloat("Lacunarity", &_lacunarity, 1.5f, 4.f);
         if (ImGui::Button("Generate fractal brownian motion")) {
             _generateHeightmap(0);
         }
@@ -146,8 +146,8 @@ float FractalGenerator::_sample(glm::vec2 point) const {
     int x1 = (x0 + 1) & 0xff;
     int y1 = (y0 + 1) & 0xff;
 
-    float u = point.x - x0;
-    float v = point.y - y0;
+    float u = point.x - std::floor(point.x);
+    float v = point.y - std::floor(point.y);
 
     // corner gradients
     const glm::vec2 grad00 = _gradients[_hash(x0, y0)];
