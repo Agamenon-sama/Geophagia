@@ -2,6 +2,8 @@
 
 Terrain generator
 
+![screenshot](screenshot.png)
+
 # Dependencies
 
 - SDL3
