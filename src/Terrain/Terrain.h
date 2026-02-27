@@ -92,6 +92,7 @@ public:
 
     u32 getWidth() const { return _width; }
     u32 getDepth() const { return _depth; }
+    std::vector<f32> getHeights() const { return _heights; }
     // const u32* getHeightMap() const { return _heights; }
 
 private:

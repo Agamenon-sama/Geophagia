@@ -126,6 +126,7 @@ Geophagia::Geophagia()
 
     _voronoiGenerator = std::make_unique<VoronoiGenerator>(&_terrain);
     _fractalGenerator = std::make_unique<FractalGenerator>(&_terrain);
+    _erosionGenerator = std::make_unique<ErosionGenerator>(&_terrain);
 }
 
 void Geophagia::run() {
@@ -169,6 +170,8 @@ void Geophagia::run() {
 
         _voronoiGenerator->uiRender();
         _fractalGenerator->uiRender();
+        _erosionGenerator->uiRender();
+        _erosionGenerator->update();
 
 
         endGuiFrame();
