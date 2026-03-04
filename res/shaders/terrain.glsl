@@ -36,7 +36,7 @@ void main() {
     vec3 lightDirection = normalize(lightPos - FragPos);
     vec3 normal = normalize(Normal);
 
-    float ambient = 0.4f;
+    float ambient = 0.8f;
     float diffuse = 0.f;
 
     diffuse = max(0, dot(lightDirection, normal));

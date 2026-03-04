@@ -19,12 +19,12 @@ public:
 
 private:
     // simulation parameters
-    float _deltaTime = 0.001f; ///< @brief Simulation time step
-    float _rainIntensity = 1.f;
-    float _sedimentCapacity = 1.f;
-    float _erosionConstant = 0.1f;
-    float _depositionConstant = 0.1f;
-    float _evaporationConstant = 0.05f;
+    float _deltaTime = 0.005f; ///< @brief Simulation time step
+    float _rainIntensity = 0.015f;
+    float _sedimentCapacity = 1.0f;
+    float _erosionConstant = 0.5f;
+    float _depositionConstant = 0.5f;
+    float _evaporationConstant = 0.005f;
 
     // simulation data
     std::vector<float> _heightmap;
@@ -35,7 +35,7 @@ private:
 
     // multithreading data
     std::future<void> _simulationTask;
-    bool _isSimulationRunning;
+    std::atomic<bool> _isSimulationRunning;
     /**
      * @brief Temporary heightmap buffer for safe communication between
      * the working thread and the main thread that uploads the heightmap to the gpu

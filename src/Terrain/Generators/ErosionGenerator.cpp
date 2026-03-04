@@ -16,11 +16,11 @@ void ErosionGenerator::uiRender() {
     ImGui::Begin("Erosion Simulator");
         ImGui::InputScalar("Seed", ImGuiDataType_U64, &_seed);
         ImGui::SliderFloat("Time step", &_deltaTime, 0.0001f, 0.01f);
-        ImGui::SliderFloat("Rain intensity", &_rainIntensity, 0.1f, 3.f);
+        ImGui::SliderFloat("Rain intensity", &_rainIntensity, 0.001f, 0.5f);
         ImGui::SliderFloat("Sediment capacity", &_sedimentCapacity, 0.1f, 3.f);
-        ImGui::SliderFloat("Erosion constant", &_erosionConstant, 0.01f, 1.f);
-        ImGui::SliderFloat("Deposition constant", &_depositionConstant, 0.01f, 1.f);
-        ImGui::SliderFloat("Evaporation constant", &_evaporationConstant, 0.01f, 0.5f);
+        ImGui::SliderFloat("Erosion constant", &_erosionConstant, 0.1f, 3.f);
+        ImGui::SliderFloat("Deposition constant", &_depositionConstant, 0.1f, 3.f);
+        ImGui::SliderFloat("Evaporation constant", &_evaporationConstant, 0.001f, 0.5f);
 
         bool isProcessing = _isSimulationRunning;
         if (isProcessing) {
@@ -31,7 +31,18 @@ void ErosionGenerator::uiRender() {
         }
         if (isProcessing) {
             ImGui::EndDisabled();
-            ImGui::Text("Simulation Running");
+        }
+
+        ImGui::SameLine();
+
+        if (!isProcessing) {
+            ImGui::BeginDisabled();
+        }
+        if (ImGui::Button("End The Simulation")) {
+            _isSimulationRunning = false;
+        }
+        if (!isProcessing) {
+            ImGui::EndDisabled();
         }
 
     ImGui::End();
@@ -43,10 +54,24 @@ void ErosionGenerator::_applyRainfall(float dt) {
     std::normal_distribution<float> dist(0.01f, .005f);
     auto rng = std::bind(dist, mt);
 
-    for (size_t i = 0; i < _waterHeight.size(); i++) {
-        float rt = std::max(0.f, rng());
+    // rain
+    // for (size_t i = 0; i < _waterHeight.size(); i++) {
+    //     float rt = std::max(0.f, rng());
+    //
+    //     _waterHeight[i] += dt * rt * _rainIntensity;
+    // }
 
-        _waterHeight[i] += dt * rt * _rainIntensity;
+    auto distance = [this](float x, float y) {
+        return std::sqrt((100-x)*(100-x) + (100-y)*(100-y));
+    };
+
+    // constant water source
+    for (int y = 50; y < _terrain->getDepth() - 50; y++) {
+        for (int x = 50; x < _terrain->getWidth() - 50; x++) {
+            if (distance(x, y) < 15) {
+                _waterHeight[y * _terrain->getWidth() + x] += dt * 1.f;
+            }
+        }
     }
 }
 
@@ -227,7 +252,8 @@ void ErosionGenerator::generateHeightmap() {
     _init();
 
     _simulationTask = std::async(std::launch::async, [this]() {
-        for (int i = 0; i < 1'000; i++) {
+        u64 i = 0;
+        while (_isSimulationRunning) {
             _applyRainfall(_deltaTime);
             _computeFlow(_deltaTime);
             _computeErosionDeposition(_deltaTime);
@@ -238,6 +264,8 @@ void ErosionGenerator::generateHeightmap() {
                 _heightmapB = _heightmap;
                 _updateFlag.store(true, std::memory_order_release);
             }
+
+            i++;
         }
     });
 
@@ -262,17 +290,17 @@ void ErosionGenerator::update() {
 void ErosionGenerator::_init() {
     if (_terrain) {
         _heightmap = _terrain->getHeights();
-        _waterHeight.resize(_heightmap.size(), 0.f);
-        _suspendedSedimentAmount.resize(_heightmap.size(), 0.f);
-        _outflowFlux.resize(_heightmap.size(), glm::vec4(0.f));
-        _velocity.resize(_heightmap.size(), glm::vec2(0.f));
+        _waterHeight = std::vector<float>(_heightmap.size(), 0.f);
+        _suspendedSedimentAmount = std::vector<float>(_heightmap.size(), 0.f);
+        _outflowFlux = std::vector<glm::vec4>(_heightmap.size(), glm::vec4(0.f));
+        _velocity = std::vector<glm::vec2>(_heightmap.size(), glm::vec2(0.f));
     }
     else {
-        _heightmap.resize(256*256, 0.f);
-        _waterHeight.resize(256*256, 0.f);
-        _suspendedSedimentAmount.resize(256*256, 0.f);
-        _outflowFlux.resize(256*256, glm::vec4(0.f));
-        _velocity.resize(256*256, glm::vec2(0.f));
+        _heightmap = std::vector<float>(256*256, 0.f);
+        _waterHeight = std::vector<float>(256*256, 0.f);
+        _suspendedSedimentAmount = std::vector<float>(256*256, 0.f);
+        _outflowFlux = std::vector<glm::vec4>(256*256, glm::vec4(0.f));
+        _velocity = std::vector<glm::vec2>(256*256, glm::vec2(0.f));
     }
 }
 
