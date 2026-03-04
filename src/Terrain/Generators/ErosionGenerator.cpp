@@ -51,7 +51,7 @@ void ErosionGenerator::uiRender() {
 void ErosionGenerator::_applyRainfall(float dt) {
     // float rainIntensity = 1.f; // param
     std::mt19937 mt(_seed);
-    std::normal_distribution<float> dist(0.01f, .005f);
+    std::normal_distribution<float> dist(0.02f, .01f);
     auto rng = std::bind(dist, mt);
 
     // rain
@@ -68,8 +68,11 @@ void ErosionGenerator::_applyRainfall(float dt) {
     // constant water source
     for (int y = 50; y < _terrain->getDepth() - 50; y++) {
         for (int x = 50; x < _terrain->getWidth() - 50; x++) {
-            if (distance(x, y) < 15) {
-                _waterHeight[y * _terrain->getWidth() + x] += dt * 1.f;
+            if (distance(x, y) < 15.f) {
+                // if (distance(x, y) > 0.001f)
+                //     _waterHeight[y * _terrain->getWidth() + x] += dt * 1.f / distance(x, y);
+                // else
+                    _waterHeight[y * _terrain->getWidth() + x] = dt * 1.f;
             }
         }
     }
@@ -146,35 +149,77 @@ void ErosionGenerator::_computeErosionDeposition(float dt) {
     const u32 depth = _terrain->getDepth();
     const float PIPE_LENGTH = 1.f;
 
+    std::vector<float> heightDelta(_heightmap.size(), 0.0f);
+    std::vector<float> sedimentDelta(_heightmap.size(), 0.0f);
+
+    auto H = [&](int j) {
+        return _heightmap[j] + _waterHeight[j];
+    };
+
     for (u32 y = 1; y < depth - 1; y++) {
         for (u32 x = 1; x < width - 1; x++) {
             u32 i = y * width + x;
 
             // calculate local slope (alpha)
             // we use the central difference to find the gradient
-            float dhdx = (_heightmap[i+1] - _heightmap[i-1]) / (2.0f * PIPE_LENGTH);
-            float dhdy = (_heightmap[i+width] - _heightmap[i-width]) / (2.0f * PIPE_LENGTH);
+            float dhdx = (H(i+1) - H(i-1)) / (2.0f * PIPE_LENGTH);
+            float dhdy = (H(i+width) - H(i-width)) / (2.0f * PIPE_LENGTH);
 
             // sin(alpha) is related to the magnitude of the gradient
-            float slope = std::sqrt(dhdx*dhdx + dhdy*dhdy);
-            float sinAlpha = std::min(0.05f, slope);
+            // float sinAlpha = std::min(0.05f, std::sqrt(dhdx*dhdx + dhdy*dhdy));
+            float grad = std::sqrt(dhdx*dhdx + dhdy*dhdy);
+            float sinAlpha = grad / std::sqrt(1.f + grad * grad);
+            if (sinAlpha < 1e-4f) {
+                continue; // don't erode on flat terrain
+            }
 
             // calculate transport capacity (C)
             float velocityMag = glm::length(_velocity[i]);
-            float C = _sedimentCapacity * sinAlpha * velocityMag;
-
-            if (C > _suspendedSedimentAmount[i]) {
-                // erode terrain
-                float amount = _erosionConstant * (C - _suspendedSedimentAmount[i]);
-                _heightmap[i] = std::max(0.f, _heightmap[i] - amount);
-                _suspendedSedimentAmount[i] += amount;
-            } else {
-                // deposit sediment
-                float amount = _depositionConstant * (_suspendedSedimentAmount[i] - C);
-                _heightmap[i] += amount;
-                _suspendedSedimentAmount[i] -= amount;
+            if (velocityMag < 1e-5f) {
+                continue;
             }
+
+            float C = _sedimentCapacity * sinAlpha * velocityMag * _waterHeight[i];
+
+            float capacityDiff = C - _suspendedSedimentAmount[i];
+            float water = _waterHeight[i];
+
+            float amount = capacityDiff * water;// * dt;
+
+            if (capacityDiff > 0.0f) {
+                // erosion
+                amount *= _erosionConstant;
+                amount = std::min(amount, _heightmap[i]);
+                heightDelta[i] -= amount;
+                sedimentDelta[i] += amount;
+            }
+            else {
+                // deposition
+                amount *= _depositionConstant;
+                amount = std::min(-amount, _suspendedSedimentAmount[i]);
+                heightDelta[i] += amount;
+                sedimentDelta[i] -= amount;
+            }
+
+            // if (C > _suspendedSedimentAmount[i]) {
+            //     // erode terrain
+            //     float amount = _erosionConstant * (C - _suspendedSedimentAmount[i]);
+            //     amount = std::min(amount, _heightmap[i]);
+            //     _heightmap[i] = std::max(0.f, _heightmap[i] - amount);
+            //     _suspendedSedimentAmount[i] += amount;
+            // } else {
+            //     // deposit sediment
+            //     float amount = _depositionConstant * (_suspendedSedimentAmount[i] - C);
+            //     amount = std::min(amount, _suspendedSedimentAmount[i]);
+            //     _heightmap[i] += amount;
+            //     _suspendedSedimentAmount[i] -= amount;
+            // }
         }
+    }
+
+    for (size_t i = 0; i < _heightmap.size(); i++) {
+        _heightmap[i] = _heightmap[i] + heightDelta[i];
+        _suspendedSedimentAmount[i] = _suspendedSedimentAmount[i] + sedimentDelta[i];
     }
 }
 
@@ -239,10 +284,12 @@ void ErosionGenerator::_applyEvaporation(float dt) {
 
     for (u32 i = 0; i < width * depth; i++) {
         // Reduce the water height
-        _waterHeight[i] *= (1.0f - _evaporationConstant * dt);
+        _waterHeight[i] *= (1.f - _evaporationConstant * dt);
 
         if (_waterHeight[i] < 0.0001f) {
-            _waterHeight[i] = 0.0f;
+            _waterHeight[i] = 0.f;
+            _outflowFlux[i] = glm::vec4(0.f);
+            _velocity[i] = glm::vec2(0.f);
         }
     }
 }
