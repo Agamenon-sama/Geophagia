@@ -16,7 +16,7 @@
 
 namespace Geophagia {
 
-void uiRender() {
+void Geophagia::uiRender() {
     ImGui::Begin("Renderer");
 
         ImGui::Text("last frame: %.3f ms, fps: %.3f", 1000.f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -27,6 +27,15 @@ void uiRender() {
         ImGui::BulletText("version: %s", (const char*)glGetString(GL_VERSION));
         ImGui::BulletText("renderer: %s", (const char*)glGetString(GL_RENDERER));
         ImGui::BulletText("anisotropy samples supported: %.0fx", Necrosis::TextureSampler::getMaxAnisotropySamples());
+
+        ImGui::Separator();
+        ImGui::Text("Light:");
+
+        ImGui::SliderFloat("x position", &_lightPosition[0], -255.f, 255.f);
+        ImGui::SliderFloat("y position", &_lightPosition[1], -255.f, 255.f);
+        ImGui::SliderFloat("z position", &_lightPosition[2], -255.f, 255.f);
+
+        ImGui::Text("light position: (%.2f, %.2f, %.2f)", _lightPosition[0], _lightPosition[1], _lightPosition[2]);
 
     ImGui::End();
 }
@@ -91,7 +100,7 @@ void Geophagia::renderDockSpace() {
 
 Geophagia::Geophagia()
         : Necrosis::Engine({ .windowTitle = "Geophagia", .windowWidth = 1600, .windowHeight = 900 })
-        , _camera(glm::vec3(10.f, 50.f, 25.f)), _isFramebufferHovered(false) {
+        , _camera(glm::vec3(10.f, 50.f, 25.f)), _isFramebufferHovered(false), _lightPosition(2.f, 6.f, 8.f) {
 
     _camera.movementSpeed = 0.05f;
     _camera.near = 1.f;
@@ -146,6 +155,7 @@ void Geophagia::run() {
         // terrainShader->setMat4f("u_model", model);
         terrainShader->setMat4f("u_view", _camera.getViewMatrix());
         terrainShader->setMat4f("u_projection", _camera.getProjMatrix());
+        terrainShader->setVec3f("u_lightPos", _lightPosition);
         _terrain.render();
         _framebuffer->unbind();
 

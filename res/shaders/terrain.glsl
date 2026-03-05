@@ -29,11 +29,12 @@ in vec3 FragPos;
 in vec3 Normal;
 
 
-uniform sampler2D tex;
+uniform sampler2D u_tex;
+uniform vec3 u_lightPos;
 
 void main() {
-    vec3 lightPos = vec3(2.f, 6.f, 8.f);
-    vec3 lightDirection = normalize(lightPos - FragPos);
+    // vec3 lightPos = vec3(2.f, 6.f, 8.f);
+    vec3 lightDirection = normalize(u_lightPos - FragPos);
     vec3 normal = normalize(Normal);
 
     float ambient = 0.8f;
@@ -43,7 +44,7 @@ void main() {
 
     float brightness = diffuse + ambient;
     // vec3 colour = vec3(0.44f, 0.33, 0.23f);
-    vec3 colour = texture(tex, texCoord).rgb;
+    vec3 colour = texture(u_tex, texCoord).rgb;
 
     FragColor = vec4(colour * brightness, 1.f);
     // FragColor = vec4(normal, 1.f);

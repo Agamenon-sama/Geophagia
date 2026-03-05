@@ -24,6 +24,7 @@ public:
     void run();
 
     void renderDockSpace();
+    void uiRender();
 
 private:
     std::unique_ptr<Necrosis::Renderer> _renderer;
@@ -31,6 +32,7 @@ private:
     Necrosis::Camera _camera;
     Necrosis::InputManager _input;
     bool _isFramebufferHovered;
+    glm::vec3 _lightPosition;
 
     std::unique_ptr<Necrosis::Framebuffer> _framebuffer;
 
