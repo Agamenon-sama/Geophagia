@@ -31,11 +31,9 @@ void Geophagia::uiRender() {
         ImGui::Separator();
         ImGui::Text("Light:");
 
-        ImGui::SliderFloat("x position", &_lightPosition[0], -255.f, 255.f);
-        ImGui::SliderFloat("y position", &_lightPosition[1], -255.f, 255.f);
-        ImGui::SliderFloat("z position", &_lightPosition[2], -255.f, 255.f);
-
-        ImGui::Text("light position: (%.2f, %.2f, %.2f)", _lightPosition[0], _lightPosition[1], _lightPosition[2]);
+        ImGui::SliderFloat("X position", &_lightPosition[0], -255.f, 255.f);
+        ImGui::SliderFloat("Y position", &_lightPosition[1], -255.f, 255.f);
+        ImGui::SliderFloat("Z position", &_lightPosition[2], -255.f, 255.f);
 
     ImGui::End();
 }

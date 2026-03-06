@@ -28,7 +28,7 @@ TerrainRenderer::TerrainRenderer() {
     // _normalVao->bind();
     // _normalVbo = std::make_unique<Necrosis::VertexBuffer>(nullptr, 0, GL_FLOAT);
     // _normalVbo->bind();
-    //
+
     // Necrosis::VertexBufferLayout normalLayout;
     // normalLayout.push(GL_FLOAT, 3);
     // normalLayout.push(GL_FLOAT, 3);
@@ -52,10 +52,57 @@ void TerrainRenderer::render() const {
     glDrawElements(GL_TRIANGLES, _ibo->getCount(), GL_UNSIGNED_INT, 0);
     _vao->unbind();
 
-//     glLineWidth(2.f);
-//     _normalVao->bind();
-//     glDrawArrays(GL_LINES, 0, _normalVbo->count());
-//     glLineWidth(1.f);
+     // glLineWidth(2.f);
+     // _normalVao->bind();
+     // glDrawArrays(GL_LINES, 0, _normalVbo->count());
+     // glLineWidth(1.f);
+}
+
+[[nodiscard]]
+glm::vec3 generateNormal(u32 x, u32 z, const std::vector<f32> &heights, u32 width, u32 depth) {
+    assert(x < width && z < depth || "Invalid coordinate for normal generation");
+    auto getHeight = [&](i32 x, i32 z) {
+        x = std::clamp(x, 0, static_cast<i32>(width) - 1);
+        z = std::clamp(z, 0, static_cast<i32>(depth) - 1);
+        return heights[z * width + x];
+    };
+
+    std::array<glm::vec3, 6> neighbours = {
+        glm::vec3(static_cast<i32>(x) + 1, getHeight(static_cast<i32>(x) + 1, static_cast<i32>(z)), static_cast<i32>(z)), // R
+        glm::vec3(static_cast<i32>(x) + 1, getHeight(static_cast<i32>(x) + 1, static_cast<i32>(z) + 1), static_cast<i32>(z) + 1), // UR
+        glm::vec3(static_cast<i32>(x), getHeight(static_cast<i32>(x), static_cast<i32>(z) - 1),  static_cast<i32>(z) - 1), // U
+        glm::vec3(static_cast<i32>(x) - 1, getHeight(static_cast<i32>(x) - 1, static_cast<i32>(z)), static_cast<i32>(z)), // L
+        glm::vec3(static_cast<i32>(x) - 1, getHeight(static_cast<i32>(x) - 1, static_cast<i32>(z) - 1), static_cast<i32>(z) - 1), // DL
+        glm::vec3(static_cast<i32>(x), getHeight(static_cast<i32>(x), static_cast<i32>(z) + 1), static_cast<i32>(z) + 1) // D
+    };
+
+    glm::vec3 current(x, heights[z * width + x], z);
+    glm::vec3 normal(0.f);
+
+    for (int i = 0; i < 6; i++) {
+        glm::vec3 v1 = neighbours[i] - current;
+        glm::vec3 v2 = neighbours[(i + 1) % 6] - current;
+        normal += glm::cross(v1, v2);
+    }
+
+    return glm::normalize(normal);
+}
+
+[[nodiscard]]
+glm::vec3 generateNormalFast(u32 x, u32 z, const std::vector<f32> &heights, u32 width, u32 depth) {
+    assert(x < width && z < depth || "Invalid coordinate for normal generation");
+    auto getHeight = [&](i32 x, i32 z) {
+        x = std::clamp(x, 0, static_cast<i32>(width) - 1);
+        z = std::clamp(z, 0, static_cast<i32>(depth) - 1);
+        return heights[z * width + x];
+    };
+
+    const float hL = getHeight(static_cast<i32>(x) - 1, static_cast<i32>(z));
+    const float hR = getHeight(static_cast<i32>(x) + 1, static_cast<i32>(z));
+    const float hU = getHeight(static_cast<i32>(x), static_cast<i32>(z) - 1);
+    const float hD = getHeight(static_cast<i32>(x), static_cast<i32>(z) + 1);
+
+    return glm::normalize(glm::vec3(hL - hR, 2.f, hU - hD));
 }
 
 void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32 width, const u32 depth, const float textureScale) const {
@@ -69,12 +116,6 @@ void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32
     u32 numQuads = (width - 1) * (depth - 1);
     indices.resize(numQuads * 6);
 
-    auto getHeight = [&](i32 x, i32 z) {
-        x = std::clamp(x, 0, static_cast<i32>(width) - 1);
-        z = std::clamp(z, 0, static_cast<i32>(depth) - 1);
-        return heights[z * width + x];
-    };
-
     // std::vector<Necrosis::Vertex> normalLines;
 
     // generate vertex data
@@ -83,12 +124,7 @@ void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32
         for (u32 x = 0; x < width; x++) {
             float y = heights[z * width + x];
 
-            const float hL = getHeight(static_cast<i32>(x) - 1, static_cast<i32>(z));
-            const float hR = getHeight(static_cast<i32>(x) + 1, static_cast<i32>(z));
-            const float hU = getHeight(static_cast<i32>(x), static_cast<i32>(z) - 1);
-            const float hD = getHeight(static_cast<i32>(x), static_cast<i32>(z) + 1);
-
-            const glm::vec3 normal = glm::normalize(glm::vec3(hL - hR, 2.f, hU - hD));
+            auto normal = generateNormal(x, z, heights, width, depth);
 
             vertices[index] = Necrosis::Vertex(
                 {
