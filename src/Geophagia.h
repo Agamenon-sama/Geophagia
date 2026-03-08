@@ -31,10 +31,13 @@ private:
     std::unique_ptr<Necrosis::EventManager> _eventManager;
     Necrosis::Camera _camera;
     Necrosis::InputManager _input;
+    std::shared_ptr<Necrosis::Shader> _terrainShader;
+    std::shared_ptr<Necrosis::Shader> _shadowMapShader;
     bool _isFramebufferHovered;
     glm::vec3 _lightPosition;
 
     std::unique_ptr<Necrosis::Framebuffer> _framebuffer;
+    std::unique_ptr<Necrosis::Framebuffer> _shadowMapFramebuffer;
 
     Terrain _terrain;
     std::unique_ptr<VoronoiGenerator> _voronoiGenerator;
@@ -42,6 +45,9 @@ private:
     std::unique_ptr<ErosionGenerator> _erosionGenerator;
 
     void _setupMouseEventListeners();
+    void _terrainPass();
+    void _guiPass();
+    void _shadowMapPass();
 };
 
 }

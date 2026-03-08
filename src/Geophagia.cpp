@@ -31,9 +31,9 @@ void Geophagia::uiRender() {
         ImGui::Separator();
         ImGui::Text("Light:");
 
-        ImGui::SliderFloat("X position", &_lightPosition[0], -255.f, 255.f);
-        ImGui::SliderFloat("Y position", &_lightPosition[1], -255.f, 255.f);
-        ImGui::SliderFloat("Z position", &_lightPosition[2], -255.f, 255.f);
+        ImGui::SliderFloat("X position", &_lightPosition[0], -0.5f, 0.5f);
+        ImGui::SliderFloat("Y position", &_lightPosition[1], 0.f, 1.f);
+        ImGui::SliderFloat("Z position", &_lightPosition[2], -0.5f, 0.5f);
 
     ImGui::End();
 }
@@ -98,7 +98,7 @@ void Geophagia::renderDockSpace() {
 
 Geophagia::Geophagia()
         : Necrosis::Engine({ .windowTitle = "Geophagia", .windowWidth = 1600, .windowHeight = 900 })
-        , _camera(glm::vec3(10.f, 50.f, 25.f)), _isFramebufferHovered(false), _lightPosition(2.f, 6.f, 8.f) {
+        , _camera(glm::vec3(10.f, 50.f, 25.f)), _isFramebufferHovered(false), _lightPosition(0.8f, 0.8f, 1.f) {
 
     _camera.movementSpeed = 0.05f;
     _camera.near = 1.f;
@@ -122,7 +122,24 @@ Geophagia::Geophagia()
         Necrosis::TextureManager::getTextureFromID(texture).getHeight()
     );
 
+    _terrainShader = Necrosis::Shader::makeFromFile("../res/shaders/terrain.glsl");
+    if (!_terrainShader) {
+        slog::error("Failed to load terrain shader");
+        exit(1);
+    }
+    _terrainShader->setInt("tex", 0);
+
+    _shadowMapShader = Necrosis::Shader::makeFromFile("../res/shaders/ShadowMapping.glsl");
+    if (!_shadowMapShader) {
+        slog::error("Failed to load the shadow map shader");
+        exit(1);
+    }
+
     _framebuffer = std::make_unique<Necrosis::Framebuffer>(glm::ivec4(0, 0, 1280, 720));
+    _shadowMapFramebuffer = std::make_unique<Necrosis::Framebuffer>(
+        glm::ivec4(0, 0, 1024, 1024),
+        Necrosis::FramebufferType::Depth
+    );
 
     // if (!_terrain.loadRawFromFile("../res/heightmap.raw")) {
     if (!_terrain.loadImageFromFile("../res/Heightmap.png")) {
@@ -137,50 +154,16 @@ Geophagia::Geophagia()
 }
 
 void Geophagia::run() {
-    auto terrainShader = Necrosis::Shader::makeFromFile("../res/shaders/terrain.glsl");
-    terrainShader->setInt("tex", 0);
-
     while (_eventManager->appIsRunning) {
         _eventManager->manageEvents();
 
         startGuiFrame();
 
-        _framebuffer->bind();
-        _renderer->clear();
+        _shadowMapPass();
 
-        _renderer->renderAll();
-        terrainShader->use();
-        // terrainShader->setMat4f("u_model", model);
-        terrainShader->setMat4f("u_view", _camera.getViewMatrix());
-        terrainShader->setMat4f("u_projection", _camera.getProjMatrix());
-        terrainShader->setVec3f("u_lightPos", _lightPosition);
-        _terrain.render();
-        _framebuffer->unbind();
+        _terrainPass();
 
-        _renderer->clear();
-
-        renderDockSpace();
-        uiRender();
-
-
-        // ImGui::ShowDemoWindow();
-        ImGui::Begin("Image");
-            ImGui::Image(
-                (ImTextureRef) _framebuffer->getTextureID(),
-                ImVec2((f32) _framebuffer->getWidth(), (f32) _framebuffer->getHeight()),
-                ImVec2(0, 1), ImVec2(1, 0)
-            );
-            if (ImGui::IsItemHovered()) { _isFramebufferHovered = true; }
-            else { _isFramebufferHovered = false; }
-        ImGui::End();
-        _terrain.uiDrawHeightmapTexture();
-        _terrain.uiRender();
-
-        _voronoiGenerator->uiRender();
-        _fractalGenerator->uiRender();
-        _erosionGenerator->uiRender();
-        _erosionGenerator->update();
-
+        _guiPass();
 
         endGuiFrame();
 
@@ -226,5 +209,86 @@ void Geophagia::_setupMouseEventListeners() {
         }
     });
 }
+
+void Geophagia::_shadowMapPass() {
+    _shadowMapFramebuffer->bind();
+    _renderer->clear();
+
+    glm::mat4 proj = glm::ortho(-1000.0f, 1000.0f, -1000.0f, 1000.0f, -1.0f, 1000.0f);
+    glm::mat4 view = glm::lookAt(
+        _lightPosition * glm::vec3(_terrain.getWidth(), 255.f, _terrain.getDepth()),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+
+    _shadowMapShader->use();
+    _shadowMapShader->setMat4f("u_projection", proj);
+    _shadowMapShader->setMat4f("u_view", view);
+
+    _terrain.render();
+
+    _shadowMapFramebuffer->unbind();
+}
+
+
+void Geophagia::_terrainPass() {
+    _framebuffer->bind();
+    _renderer->clear();
+
+    glm::mat4 lightProj = glm::ortho(-1000.0f, 1000.0f, -1000.0f, 1000.0f, -1.0f, 1000.0f);
+    glm::mat4 lightView = glm::lookAt(
+        _lightPosition * glm::vec3(_terrain.getWidth(), 255.f, _terrain.getDepth()),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+
+    auto lightSpaceMatrix = lightProj * lightView;
+
+    // _renderer->renderAll();
+    _terrainShader->use();
+    // _terrainShader->setMat4f("u_model", model);
+    _terrainShader->setMat4f("u_view", _camera.getViewMatrix());
+    _terrainShader->setMat4f("u_projection", _camera.getProjMatrix());
+    _terrainShader->setVec3f(
+        "u_lightPos",
+        _lightPosition * glm::vec3(_terrain.getWidth(), 255.f, _terrain.getDepth())
+    );
+    _terrainShader->setMat4f("u_lightSpaceMatrix", lightSpaceMatrix);
+
+    auto shadowMapTex = _shadowMapFramebuffer->getTextureID();
+    Necrosis::TextureManager::bind(shadowMapTex, 1);
+    _terrainShader->setInt("u_shadowMap", 1);
+
+    _terrain.render();
+    _framebuffer->unbind();
+}
+
+void Geophagia::_guiPass() {
+    _renderer->clear();
+
+    renderDockSpace();
+    uiRender();
+
+
+    // ImGui::ShowDemoWindow();
+    ImGui::Begin("Image");
+    ImGui::Image(
+        (ImTextureRef) _framebuffer->getTextureID(),
+        ImVec2((f32) _framebuffer->getWidth(), (f32) _framebuffer->getHeight()),
+        ImVec2(0, 1), ImVec2(1, 0)
+    );
+    if (ImGui::IsItemHovered()) { _isFramebufferHovered = true; }
+    else { _isFramebufferHovered = false; }
+    ImGui::End();
+    _terrain.uiDrawHeightmapTexture();
+    _terrain.uiRender();
+
+    _voronoiGenerator->uiRender();
+    _fractalGenerator->uiRender();
+    _erosionGenerator->uiRender();
+    _erosionGenerator->update();
+}
+
+
 
 }

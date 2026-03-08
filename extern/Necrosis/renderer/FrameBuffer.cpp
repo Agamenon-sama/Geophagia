@@ -8,7 +8,7 @@
 
 namespace Necrosis {
 
-Framebuffer::Framebuffer(const glm::ivec4 &viewport) : _viewport(viewport) {
+Framebuffer::Framebuffer(const glm::ivec4 &viewport, FramebufferType type) : _viewport(viewport) {
     // int viewport[4];
     glGetIntegerv(GL_VIEWPORT, glm::value_ptr(_defaultViewport));
 
@@ -20,17 +20,39 @@ Framebuffer::Framebuffer(const glm::ivec4 &viewport) : _viewport(viewport) {
     glBindTexture(GL_TEXTURE_2D, _texture);
 
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, _viewport[2], _viewport[3], 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    if (type == FramebufferType::Color) {
+        glTexImage2D(
+            GL_TEXTURE_2D, 0, GL_RGB, _viewport[2], _viewport[3],
+            0, GL_RGB, GL_UNSIGNED_BYTE, nullptr
+        );
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _texture, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    uint32_t rbo;
-    glGenRenderbuffers(1, &rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, _viewport[2], _viewport[3]);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _texture, 0);
+
+        uint32_t rbo;
+        glGenRenderbuffers(1, &rbo);
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, _viewport[2], _viewport[3]);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+    }
+    else if (type == FramebufferType::Depth) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, _viewport[2], _viewport[3],
+            0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr
+        );
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _texture, 0);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+    }
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         // Window::showErrorMessageBox("Failed to create framebuffer");

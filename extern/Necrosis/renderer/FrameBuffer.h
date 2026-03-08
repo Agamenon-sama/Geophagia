@@ -6,9 +6,14 @@
 
 namespace Necrosis {
 
+enum class FramebufferType : u8 {
+    Color,
+    Depth
+};
+
 class Framebuffer {
 public:
-    Framebuffer(const glm::ivec4 &viewport);
+    Framebuffer(const glm::ivec4 &viewport, FramebufferType type = FramebufferType::Color);
 
     void bind() const;
     void unbind() const;

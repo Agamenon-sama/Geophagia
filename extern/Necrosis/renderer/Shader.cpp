@@ -22,7 +22,7 @@ std::shared_ptr<Shader> Shader::makeFromString(const std::string &source) {
 
     while (std::getline(sourceStream, line)) {
         lineNumber++;
-        if (line == "#vertex") {
+        if (line == "#pragma vertex") {
             parseState = 0;
             vertexSource += "#version 450 core\n";
             vertexSource += "uniform mat4 u_model;\n";
@@ -31,7 +31,7 @@ std::shared_ptr<Shader> Shader::makeFromString(const std::string &source) {
             vertexSource += "#line " + std::to_string(lineNumber+1) + "\n";
             continue;
         }
-        else if (line == "#fragment") {
+        else if (line == "#pragma fragment") {
             parseState = 1;
             fragmentSource += "#version 450 core\n";
             fragmentSource += "uniform vec2 u_resolution;\n";
