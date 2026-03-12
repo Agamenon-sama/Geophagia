@@ -40,7 +40,7 @@ Framebuffer::Framebuffer(const glm::ivec4 &viewport, FramebufferType type) : _vi
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
     }
     else if (type == FramebufferType::Depth) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, _viewport[2], _viewport[3],
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, _viewport[2], _viewport[3],
             0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr
         );
 
@@ -48,6 +48,8 @@ Framebuffer::Framebuffer(const glm::ivec4 &viewport, FramebufferType type) : _vi
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _texture, 0);
         glDrawBuffer(GL_NONE);

@@ -40,7 +40,7 @@ in Varyings {
 
 
 uniform sampler2D u_tex;
-uniform sampler2D u_shadowMap;
+uniform sampler2DShadow u_shadowMap;
 uniform vec3 u_lightPos;
 uniform bool u_isShadowEnabled;
 
@@ -51,10 +51,20 @@ float inTheShadow(vec4 lightSpacePosition) {
     vec3 coord = lightSpacePosition.xyz / lightSpacePosition.w;
     coord = coord * 0.5f + 0.5f;
 
-    float closestDepth = texture(u_shadowMap, coord.xy).r;
-    float currentDepth = coord.z;
+    float bias = 0.01f;
+    float visibility = 0.f;
+    vec2 texelSize = 1.f / textureSize(u_shadowMap, 0);
 
-    return currentDepth > closestDepth ? 0.f : 1.f;
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            visibility += texture(
+                u_shadowMap,
+                vec3(coord.xy + vec2(x, y) * texelSize, coord.z - bias)
+            );
+        }
+    }
+
+    return visibility / 9.f;
 }
 
 void main() {

@@ -101,7 +101,7 @@ void Geophagia::renderDockSpace() {
 Geophagia::Geophagia()
         : Necrosis::Engine({ .windowTitle = "Geophagia", .windowWidth = 1600, .windowHeight = 900 })
         , _camera(glm::vec3(10.f, 50.f, 25.f)), _isFramebufferHovered(false)
-        , _isShadowEnabled(false), _lightPosition(0.8f, 0.8f, 1.f) {
+        , _isShadowEnabled(true), _lightPosition(0.4f, 0.4f, 0.5f) {
 
     _camera.movementSpeed = 0.05f;
     _camera.near = 1.f;
@@ -130,7 +130,6 @@ Geophagia::Geophagia()
         slog::error("Failed to load terrain shader");
         exit(1);
     }
-    _terrainShader->setInt("tex", 0);
 
     _shadowMapShader = Necrosis::Shader::makeFromFile("../res/shaders/ShadowMapping.glsl");
     if (!_shadowMapShader) {
@@ -228,7 +227,7 @@ void Geophagia::_shadowMapPass() {
     _shadowMapShader->use();
     _shadowMapShader->setMat4f("u_projection", proj);
     _shadowMapShader->setMat4f("u_view", view);
-    _shadowMapShader->setMat4f("u_view", _terrain.getModelMatrix());
+    _shadowMapShader->setMat4f("u_model", _terrain.getModelMatrix());
 
     _terrain.render();
 
@@ -251,9 +250,8 @@ void Geophagia::_terrainPass() {
 
     // _renderer->renderAll();
     _terrainShader->use();
-    // _terrainShader->setMat4f("u_model", model);
-    _terrainShader->setMat4f("u_view", _camera.getViewMatrix());
     _terrainShader->setMat4f("u_projection", _camera.getProjMatrix());
+    _terrainShader->setMat4f("u_view", _camera.getViewMatrix());
     _terrainShader->setMat4f("u_model", _terrain.getModelMatrix());
     _terrainShader->setVec3f(
         "u_lightPos",
@@ -262,8 +260,11 @@ void Geophagia::_terrainPass() {
     _terrainShader->setMat4f("u_lightSpaceMatrix", lightSpaceMatrix);
     _terrainShader->setBool("u_isShadowEnabled", _isShadowEnabled);
 
+    _terrainShader->setInt("u_tex", 0);
     auto shadowMapTex = _shadowMapFramebuffer->getTextureID();
-    Necrosis::TextureManager::bind(shadowMapTex, 1);
+    // TODO: shouldn't expose opengl like this
+    glActiveTexture(GL_TEXTURE0 + 1);
+    glBindTexture(GL_TEXTURE_2D, shadowMapTex);
     _terrainShader->setInt("u_shadowMap", 1);
 
     _terrain.render();
