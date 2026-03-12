@@ -1,6 +1,7 @@
 #include "Terrain.h"
 
 #include <fstream>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
@@ -12,7 +13,7 @@
 
 namespace Geophagia {
 
-Terrain::Terrain() : _width(256), _depth(256), _texture(-1)
+Terrain::Terrain() : _width(256), _depth(256), _scale(1.f, 0.25f, 1.f), _texture(-1)
     , _sampler(Necrosis::TextureSampler(Necrosis::FilterType::LinearMipmap, Necrosis::WrapMode::Mirror, 16.f, "Terrain sampler"))
     , _textureScale(1.f), _renderer(std::make_unique<TerrainRenderer>()) {
 
@@ -66,6 +67,14 @@ void Terrain::render() const {
     _sampler.bind(0);
     _renderer->render();
 }
+
+glm::mat4 Terrain::getModelMatrix() const {
+    auto mat = glm::mat4(1.f);
+    mat = glm::scale(mat, _scale);
+
+    return mat;
+}
+
 
 bool Terrain::loadRawFromMemory(const std::vector<f32> &heights, const u32 width, const u32 depth) {
     if (width == 0 || depth == 0) {
@@ -193,6 +202,7 @@ void Terrain::uiRender() {
         ImGui::InputScalar("Width", ImGuiDataType_U32, &_width, &step, &fastStep);
         ImGui::InputScalar("Depth", ImGuiDataType_U32, &_depth, &step, &fastStep);
         ImGui::SliderFloat("Texture scale", &_textureScale, 0.1f, 3.f);
+        ImGui::SliderFloat3("Scale", glm::value_ptr(_scale), 0.f, 2.f);
     ImGui::End();
 }
 

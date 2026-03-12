@@ -34,6 +34,7 @@ private:
     std::shared_ptr<Necrosis::Shader> _terrainShader;
     std::shared_ptr<Necrosis::Shader> _shadowMapShader;
     bool _isFramebufferHovered;
+    bool _isShadowEnabled;
     glm::vec3 _lightPosition;
 
     std::unique_ptr<Necrosis::Framebuffer> _framebuffer;

@@ -93,11 +93,13 @@ public:
     u32 getWidth() const { return _width; }
     u32 getDepth() const { return _depth; }
     std::vector<f32> getHeights() const { return _heights; }
+    glm::mat4 getModelMatrix() const;
     // const u32* getHeightMap() const { return _heights; }
 
 private:
     u32 _width;
     u32 _depth;
+    glm::vec3 _scale;
 
     std::vector<f32> _heights;
     Necrosis::TextureID _imageView;

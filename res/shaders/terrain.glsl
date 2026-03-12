@@ -15,12 +15,12 @@ out Varyings {
 uniform mat4 u_lightSpaceMatrix;
 
 void main() {
-    vary.fragPos = vec3(/*u_model **/ vec4(a_pos.x, a_pos.y / 4.f, a_pos.z, 1.f));
-    vary.normal = /*mat3(transpose(inverse(u_model))) **/ a_normal;
+    vary.fragPos = vec3(u_model * vec4(a_pos, 1.f));
+    vary.normal = mat3(transpose(inverse(u_model))) * a_normal;
     vary.uvCoord = a_texCoord;
     vary.fragPosLightSpace = u_lightSpaceMatrix * vec4(vary.fragPos, 1.f);
 
-    gl_Position = u_projection * u_view /** u_model*/ * vec4(a_pos.x, a_pos.y / 4.f, a_pos.z, 1.0f);
+    gl_Position = u_projection * u_view * u_model * vec4(a_pos, 1.0f);
 }
 
 // ================================
@@ -42,6 +42,7 @@ in Varyings {
 uniform sampler2D u_tex;
 uniform sampler2D u_shadowMap;
 uniform vec3 u_lightPos;
+uniform bool u_isShadowEnabled;
 
 /**
     @return 0.f if fragment is in the shadow, else 1.f
@@ -65,7 +66,10 @@ void main() {
 
     diffuse = max(0, dot(lightDirection, normal));
 
-    float shadow = inTheShadow(vary.fragPosLightSpace);
+    float shadow = 1.f;
+    if (u_isShadowEnabled) {
+        shadow = inTheShadow(vary.fragPosLightSpace);
+    }
     float brightness = shadow * diffuse + ambient;
 
     vec3 colour = texture(u_tex, vary.uvCoord).rgb;

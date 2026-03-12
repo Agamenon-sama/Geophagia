@@ -35,6 +35,8 @@ void Geophagia::uiRender() {
         ImGui::SliderFloat("Y position", &_lightPosition[1], 0.f, 1.f);
         ImGui::SliderFloat("Z position", &_lightPosition[2], -0.5f, 0.5f);
 
+        ImGui::Checkbox("Shadow", &_isShadowEnabled);
+
     ImGui::End();
 }
 
@@ -98,7 +100,8 @@ void Geophagia::renderDockSpace() {
 
 Geophagia::Geophagia()
         : Necrosis::Engine({ .windowTitle = "Geophagia", .windowWidth = 1600, .windowHeight = 900 })
-        , _camera(glm::vec3(10.f, 50.f, 25.f)), _isFramebufferHovered(false), _lightPosition(0.8f, 0.8f, 1.f) {
+        , _camera(glm::vec3(10.f, 50.f, 25.f)), _isFramebufferHovered(false)
+        , _isShadowEnabled(false), _lightPosition(0.8f, 0.8f, 1.f) {
 
     _camera.movementSpeed = 0.05f;
     _camera.near = 1.f;
@@ -159,7 +162,8 @@ void Geophagia::run() {
 
         startGuiFrame();
 
-        _shadowMapPass();
+        if (_isShadowEnabled)
+            _shadowMapPass();
 
         _terrainPass();
 
@@ -224,6 +228,7 @@ void Geophagia::_shadowMapPass() {
     _shadowMapShader->use();
     _shadowMapShader->setMat4f("u_projection", proj);
     _shadowMapShader->setMat4f("u_view", view);
+    _shadowMapShader->setMat4f("u_view", _terrain.getModelMatrix());
 
     _terrain.render();
 
@@ -249,11 +254,13 @@ void Geophagia::_terrainPass() {
     // _terrainShader->setMat4f("u_model", model);
     _terrainShader->setMat4f("u_view", _camera.getViewMatrix());
     _terrainShader->setMat4f("u_projection", _camera.getProjMatrix());
+    _terrainShader->setMat4f("u_model", _terrain.getModelMatrix());
     _terrainShader->setVec3f(
         "u_lightPos",
         _lightPosition * glm::vec3(_terrain.getWidth(), 255.f, _terrain.getDepth())
     );
     _terrainShader->setMat4f("u_lightSpaceMatrix", lightSpaceMatrix);
+    _terrainShader->setBool("u_isShadowEnabled", _isShadowEnabled);
 
     auto shadowMapTex = _shadowMapFramebuffer->getTextureID();
     Necrosis::TextureManager::bind(shadowMapTex, 1);
