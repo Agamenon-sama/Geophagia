@@ -15,12 +15,14 @@ ErosionGenerator::ErosionGenerator(Terrain *terrain) : HeightmapGenerator(terrai
 void ErosionGenerator::uiRender() {
     ImGui::Begin("Erosion Simulator");
         ImGui::InputScalar("Seed", ImGuiDataType_U64, &_seed);
-        ImGui::SliderFloat("Time step", &_deltaTime, 0.0001f, 0.01f);
-        ImGui::SliderFloat("Rain intensity", &_rainIntensity, 0.001f, 0.5f);
+        // ImGui::SliderFloat("Time step", &_deltaTime, 0.0001f, 0.01f);
+        // ImGui::SliderFloat("Rain intensity", &_rainIntensity, 0.001f, 0.5f);
         ImGui::SliderFloat("Sediment capacity", &_sedimentCapacity, 0.1f, 3.f);
-        ImGui::SliderFloat("Erosion constant", &_erosionConstant, 0.1f, 3.f);
+        ImGui::SliderFloat("Erosion constant", &_erosionConstant, 0.1f, 1.f);
         ImGui::SliderFloat("Deposition constant", &_depositionConstant, 0.1f, 3.f);
         ImGui::SliderFloat("Evaporation constant", &_evaporationConstant, 0.001f, 0.5f);
+        ImGui::SliderFloat("Flow inertia", &_flowInertia, 0.001f, 1.f);
+        ImGui::SliderInt("Erosion radius", &_erosionRadius, 1, 20);
 
         bool isProcessing = _isSimulationRunning;
         if (isProcessing) {
@@ -294,25 +296,163 @@ void ErosionGenerator::_applyEvaporation(float dt) {
     }
 }
 
+glm::vec2 calculateGradient(const std::vector<float> &heightmap, u32 width, u32 depth, glm::vec2 position) {
+    u32 iposX = static_cast<u32>(std::floor(position.x));
+    u32 iposY = static_cast<u32>(std::floor(position.y));
+    float fracPosX = position.x - iposX;
+    float fracPosY = position.y - iposY;
+
+    float hC = heightmap[iposY * width + iposX];
+    float hR = heightmap[iposY * width + iposX + 1];
+    float hU = heightmap[(iposY + 1) * width + iposX];
+    float hUR = heightmap[(iposY + 1) * width + iposX + 1];
+
+    return glm::vec2(
+        lerp(hR - hC, hUR - hU, fracPosY),
+        lerp(hU - hC, hUR - hR, fracPosX)
+    );
+}
+
+float calculateHeight(const std::vector<float> &heightmap, u32 width, u32 depth, glm::vec2 position) {
+    u32 iposX = static_cast<u32>(std::floor(position.x));
+    u32 iposY = static_cast<u32>(std::floor(position.y));
+    float fracPosX = position.x - iposX;
+    float fracPosY = position.y - iposY;
+
+    float hC = heightmap[iposY * width + iposX];
+    float hR = heightmap[iposY * width + iposX + 1];
+    float hU = heightmap[(iposY + 1) * width + iposX];
+    float hUR = heightmap[(iposY + 1) * width + iposX + 1];
+
+    return lerp(
+        lerp(hC, hR, fracPosX),
+        lerp(hU, hUR, fracPosX),
+        fracPosY
+    );
+}
+
 void ErosionGenerator::generateHeightmap() {
     _isSimulationRunning = true;
     _init();
 
     _simulationTask = std::async(std::launch::async, [this]() {
-        u64 i = 0;
-        while (_isSimulationRunning) {
-            _applyRainfall(_deltaTime);
-            _computeFlow(_deltaTime);
-            _computeErosionDeposition(_deltaTime);
-            _transportSediment(_deltaTime);
-            _applyEvaporation(_deltaTime);
+        // u64 i = 0;
+        // while (_isSimulationRunning) {
+        //     _applyRainfall(_deltaTime);
+        //     _computeFlow(_deltaTime);
+        //     _computeErosionDeposition(_deltaTime);
+        //     _transportSediment(_deltaTime);
+        //     _applyEvaporation(_deltaTime);
+        //
+        //     if (i % 10 == 0) {
+        //         _heightmapB = _heightmap;
+        //         _updateFlag.store(true, std::memory_order_release);
+        //     }
+        //
+        //     i++;
+        // }
 
-            if (i % 10 == 0) {
+        u32 numDroplets = 200'000;
+        const u32 width = _terrain->getWidth();
+        const u32 depth = _terrain->getDepth();
+        const float gravity = 9.81f;
+
+        std::mt19937 mt(_seed);
+        std::uniform_real_distribution<float> distx(0.f, static_cast<f32>(width) - 1);
+        std::uniform_real_distribution<float> distz(0.f, static_cast<f32>(depth) - 1);
+        auto rngx = [&]() { return distx(mt); };
+        auto rngz = [&]() { return distz(mt); };
+
+        for (u32 droplet = 0; droplet < numDroplets; droplet++) {
+            auto position = glm::vec2(rngx(), rngz());
+            auto direction = glm::vec2(0.f, 0.f);
+            float velocity = 1.f;
+            float water = 1.f;
+            float sediment = 0.f;
+
+            for (int lifetime = 0; lifetime < 100; lifetime++) {
+                u32 iposX = static_cast<u32>(std::floor(position.x));
+                u32 iposY = static_cast<u32>(std::floor(position.y));
+                float fracPosX = position.x - iposX;
+                float fracPosY = position.y - iposY;
+
+                auto height = calculateHeight(_heightmap, width, depth, position);
+                auto grad = calculateGradient(_heightmap, width, depth, position);
+
+                // change the drop direction using the gradient of the surface
+                direction = direction * _flowInertia - grad * (1.f - _flowInertia);
+
+                if (glm::length(direction) > 1e-5f) {
+                    direction = glm::normalize(direction);
+                }
+
+                position += direction;
+
+                if (
+                    (position.x < 0.f || position.x >= width - 1 || position.y < 0.f || position.y >= depth - 1)
+                    || (direction.x < 1e-4f && direction.y < 1e-4f)
+                ) {
+                    // if the drop stops moving or goes outside the terrain, it's dead
+                    break;
+                }
+
+                auto newHeight = calculateHeight(_heightmap, width, depth, position);
+                auto deltaHeight = newHeight - height;
+
+                float capacity = std::max(-deltaHeight, 0.01f) * velocity * water * _sedimentCapacity;
+
+                if (sediment > capacity || deltaHeight > 0.f) {
+                    // deposit
+                    // float depositAmount = deltaHeight > 0.f ? sediment : (sediment - capacity) * _depositionConstant;
+                    float depositAmount;
+                    if (deltaHeight > 0.f)
+                        depositAmount = std::min(deltaHeight, sediment);
+                    else
+                        depositAmount = (sediment - capacity) * _depositionConstant;
+
+                    sediment -= depositAmount;
+
+                    // spread the amount to be deposited on the corners of the cell bilinearly
+                    _heightmap[iposY * width + iposX] += depositAmount * (1.f - fracPosX) * (1.f - fracPosY);    // BL
+                    _heightmap[iposY * width + iposX + 1] += depositAmount * fracPosX * (1.f - fracPosY);        // BR
+                    _heightmap[(iposY + 1) * width + iposX] += depositAmount * (1.f - fracPosX) * fracPosY;      // TL
+                    _heightmap[(iposY + 1) * width + iposX + 1] += depositAmount * fracPosX * fracPosY;          // TR
+                }
+                else {
+                    // erode
+                    float erosionAmount = std::min((capacity - sediment) * _erosionConstant, -deltaHeight);
+                    // float erosionAmount = (capacity - sediment) * _erosionConstant;
+
+                    u32 dropIndex = iposY * width + iposX;
+                    for (size_t i = 0; i < _erosionIndicesCache[dropIndex].size(); i++) {
+                        u32 neighbourIndex = _erosionIndicesCache[dropIndex][i];
+                        auto w = _erosionWeightCache[dropIndex][i];
+                        float neighbourErosionAmount = erosionAmount * _erosionWeightCache[dropIndex][i];
+                        neighbourErosionAmount = neighbourErosionAmount > _heightmap[neighbourIndex]
+                                                     ? _heightmap[neighbourIndex] : neighbourErosionAmount;
+
+                        auto height = _heightmap[neighbourIndex];
+                        _heightmap[neighbourIndex] -= neighbourErosionAmount;
+                        auto newHeight = _heightmap[neighbourIndex];
+
+                        sediment += neighbourErosionAmount;
+                    }
+                }
+
+                velocity = std::sqrt(std::max(0.f, velocity * velocity + deltaHeight * gravity));
+                water = std::max(0.f, water - _evaporationConstant);
+
+                // if any of these are not valid => HELL ON EARTH
+                expect(sediment >= 0.f && sediment < 255.f);
+                expect(std::abs(deltaHeight) < 255.f);
+                expect(water <= 1.f && water >= 0.f);
+            }
+
+            // send new heightmap to the render thread
+            if (droplet % 10'000 == 0) {
                 _heightmapB = _heightmap;
                 _updateFlag.store(true, std::memory_order_release);
             }
-
-            i++;
         }
     });
 
@@ -341,6 +481,11 @@ void ErosionGenerator::_init() {
         _suspendedSedimentAmount = std::vector<float>(_heightmap.size(), 0.f);
         _outflowFlux = std::vector<glm::vec4>(_heightmap.size(), glm::vec4(0.f));
         _velocity = std::vector<glm::vec2>(_heightmap.size(), glm::vec2(0.f));
+
+        _erosionIndicesCache = std::vector<std::vector<u32>>(_heightmap.size());
+        _erosionWeightCache = std::vector<std::vector<float>>(_heightmap.size());
+
+        _cacheInit();
     }
     else {
         _heightmap = std::vector<float>(256*256, 0.f);
@@ -348,9 +493,80 @@ void ErosionGenerator::_init() {
         _suspendedSedimentAmount = std::vector<float>(256*256, 0.f);
         _outflowFlux = std::vector<glm::vec4>(256*256, glm::vec4(0.f));
         _velocity = std::vector<glm::vec2>(256*256, glm::vec2(0.f));
+
+        _erosionIndicesCache = std::vector<std::vector<u32>>(_heightmap.size());
+        _erosionWeightCache = std::vector<std::vector<float>>(_heightmap.size());
     }
 }
 
+void ErosionGenerator::_cacheInit() {
+    u32 width = _terrain->getWidth();
+    u32 depth = _terrain->getDepth();
 
 
+    // these offsets will be used to calculate the coordinates of the neighbours of the cell
+    // that will be affected by the erosion
+    std::vector<int> xOffsets(_erosionRadius * _erosionRadius * 4);
+    std::vector<int> yOffsets(_erosionRadius * _erosionRadius * 4);
+    // the weight matrix of the cell. It's used to determine
+    // how much of the neighbours the water will erode
+    std::vector<float> weights(_erosionRadius * _erosionRadius * 4);
+    // sum of the weight for normalization
+    float weightSum = 0.f;
+    // number of weights of the cell
+    u32 numWeights = 0;
+
+    // for every cell (x, y)
+    for (u32 cy = 0; cy < depth; cy++) {
+        for (u32 cx = 0; cx < width; cx++) {
+            // if moving away by the radius won't throw us out of the map
+            // if (   static_cast<i64>(cx) < _erosionRadius || cx + _erosionRadius > width - 1
+            //     || static_cast<i64>(cy) < _erosionRadius || cy + _erosionRadius > depth - 1) {
+
+                weightSum = 0.f;
+                numWeights = 0;
+
+                // for all the cell in the square 2radius * 2radius
+                for (i32 y = -_erosionRadius; y <= _erosionRadius; y++) {
+                    for (i32 x = -_erosionRadius; x <= _erosionRadius; x++) {
+                        i32 sqDist = x*x + y*y;
+
+                        // if in the circle
+                        if (sqDist < _erosionRadius * _erosionRadius) {
+                            u32 weightXPos = cx + x;
+                            u32 weightYPos = cy + y;
+
+                            // calculate the weights of the cell and its neighbours
+                            if (/*weightXPos >= 0 && */weightXPos < width && /*weightYPos >= 0 && */weightYPos < depth) {
+                                float weight = std::max(0.f, _erosionRadius - std::sqrt(static_cast<f32>(sqDist)));
+                                // float weight = 1.f - std::sqrt(sqDist) / _erosionRadius;
+                                weightSum += weight;
+                                weights[numWeights] = weight;
+                                xOffsets[numWeights] = x;
+                                yOffsets[numWeights] = y;
+                                numWeights++;
+                            }
+                        }
+                    }
+                }
+
+                size_t i = cy * width + cx;
+                _erosionIndicesCache[i] = std::vector<u32>(numWeights);
+                _erosionWeightCache[i] = std::vector<float>(numWeights);
+
+                // for specific cell (x, y) = i, write the indices and weights of neighbours j
+                for (size_t j = 0; j < numWeights; j++) {
+                    _erosionIndicesCache[i][j] = (yOffsets[j] + cy) * width + xOffsets[j] + cx;
+                    _erosionWeightCache[i][j] = weights[j] / weightSum;
+                }
+            // }
+        }
+    }
+
+    for (size_t i = 0; i < _erosionWeightCache.size(); i++) {
+        for (size_t j = 0; j < _erosionWeightCache[i].size(); j++) {
+            expect(_erosionWeightCache[i][j] > 0.f && _erosionWeightCache[i][j] < 1.f);
+        }
+    }
+}
 }

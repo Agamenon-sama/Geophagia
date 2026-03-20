@@ -3,6 +3,8 @@
 
 // data types
 #include <stdint.h>
+#include <string>
+#include <print>
 
 typedef int8_t i8;
 typedef int16_t i16;
@@ -33,8 +35,18 @@ typedef double f64;
     #endif // platform
 #else
     #define DEBUG_BREAK()
-#endif // DEBUG
+#endif // NDEBUG
 
+inline void expect(bool expression, std::string message = "") {
+#if !NDEBUG
+    if (!expression) {
+        if (!message.empty()) {
+            std::println(stderr, "Unexcepted error: '{}'", message);
+        }
+        DEBUG_BREAK();
+    }
+#endif
+}
 
 // Misc.
 #define BIT(x) (1 << x)

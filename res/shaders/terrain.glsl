@@ -83,6 +83,7 @@ void main() {
     float brightness = shadow * diffuse + ambient;
 
     vec3 colour = texture(u_tex, vary.uvCoord).rgb;
+    // vec3 colour = vec3(0.44f, 0.33, 0.23f);
 
     FragColor = vec4(colour * brightness, 1.f);
     // FragColor = vec4(normal * brightness, 1.f);

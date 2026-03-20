@@ -24,7 +24,9 @@ private:
     float _sedimentCapacity = 1.0f;
     float _erosionConstant = 0.5f;
     float _depositionConstant = 0.5f;
-    float _evaporationConstant = 0.005f;
+    float _evaporationConstant = 0.05f;
+    float _flowInertia = 0.5f;
+    int _erosionRadius = 6;
 
     // simulation data
     std::vector<float> _heightmap;
@@ -32,6 +34,9 @@ private:
     std::vector<float> _suspendedSedimentAmount;
     std::vector<glm::vec4> _outflowFlux;
     std::vector<glm::vec2> _velocity;
+
+    std::vector<std::vector<u32>> _erosionIndicesCache;
+    std::vector<std::vector<float>> _erosionWeightCache;
 
     // multithreading data
     std::future<void> _simulationTask;
@@ -53,5 +58,6 @@ private:
     [[nodiscard]]
     float _sampleSediment(float x, float y) const;
     void _init();
+    void _cacheInit();
 };
 }
