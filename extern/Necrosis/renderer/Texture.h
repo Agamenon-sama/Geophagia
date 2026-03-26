@@ -47,7 +47,7 @@ class Texture {
 public:
     Texture();
 
-    void bind(const u8 slot = 0, const u8 unit = 0) const;
+    void bind(const u8 unit = 0) const;
     void unbind() const;
 
     void updateTexture(
@@ -91,7 +91,7 @@ public:
     static Texture& getTextureFromID(const TextureID id);
     static void removeTexture(TextureID id);
 
-    static void bind(TextureID id, const u8 slot = 0, const u8 unit = 0);
+    static void bind(TextureID id, const u8 unit = 0);
     static void unbind(TextureID id);
 
 private:

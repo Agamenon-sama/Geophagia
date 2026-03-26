@@ -16,8 +16,8 @@ Texture::Texture(std::string path, int width, int height, PixelFormat format, ui
         : _filePath(path), _name(_filePath.stem().string()), _width(width), _height(height)
         , _format(format), _texture(texture), _id(id) {}
 
-void Texture::bind(const uint8_t slot, const u8 unit) const {
-    glActiveTexture(GL_TEXTURE0 + slot);
+void Texture::bind(const u8 unit) const {
+    // glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(GL_TEXTURE_2D, _texture);
     glBindTextureUnit(unit, _texture);
 }
@@ -197,10 +197,10 @@ TextureID TextureManager::makeTextureFromFile(const std::filesystem::path &path,
     return id;
 }
 
-void TextureManager::bind(TextureID id, const u8 slot, const u8 unit) {
+void TextureManager::bind(TextureID id, const u8 unit) {
     for (auto &tex : instance._textures) {
         if (tex._id == id) {
-            tex.bind(slot, unit);
+            tex.bind(unit);
         }
     }
 }
@@ -310,8 +310,8 @@ TextureSampler &TextureSampler::operator=(TextureSampler &&other) noexcept {
 }
 
 
-void TextureSampler::bind(u8 slot) const {
-    glBindSampler(slot, _handle);
+void TextureSampler::bind(u8 unit) const {
+    glBindSampler(unit, _handle);
 }
 
 

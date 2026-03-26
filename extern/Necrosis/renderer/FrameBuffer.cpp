@@ -44,12 +44,15 @@ Framebuffer::Framebuffer(const glm::ivec4 &viewport, FramebufferType type) : _vi
             0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr
         );
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+        glCreateSamplers(1, &_sampler);
+        glObjectLabel(GL_SAMPLER, _sampler, -1, "Shadow map sampler");
+
+        glSamplerParameteri(_sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glSamplerParameteri(_sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glSamplerParameteri(_sampler, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glSamplerParameteri(_sampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glSamplerParameteri(_sampler, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+        glSamplerParameteri(_sampler, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _texture, 0);
         glDrawBuffer(GL_NONE);
@@ -76,9 +79,10 @@ void Framebuffer::unbind() const {
     glViewport(_defaultViewport[0], _defaultViewport[1], _defaultViewport[2], _defaultViewport[3]);
 }
 
-void Framebuffer::bindTexture(const u8 slot) const {
-    glActiveTexture(GL_TEXTURE0 + slot);
+void Framebuffer::bindTexture(const u8 unit) const {
     glBindTexture(GL_TEXTURE_2D, _texture);
+    glBindTextureUnit(unit, _texture);
+    glBindSampler(unit, _sampler);
 }
 
 i32 Framebuffer::getWidth() const { return _viewport[2]; }

@@ -146,12 +146,12 @@ void Skybox::render() const {
     // glDepthRange(1.f, 1.f);
 
     _shader->use();
-    _shader->setMat4f("u_projection", _camera.getProjMatrix());
-    _shader->setMat4f("u_view", _camera.getViewMatrix());
+    _shader->setUniform("u_projection", _camera.getProjMatrix());
+    _shader->setUniform("u_view", _camera.getViewMatrix());
 
     glm::mat4 shift = glm::mat4(1.f);
     shift = glm::translate(shift, _camera.position);
-    _shader->setMat4f("u_translate", shift);
+    _shader->setUniform("u_translate", shift);
 
     glBindTexture(GL_TEXTURE_CUBE_MAP, _texture);
     // renderer.render(*_vao, *_vbo, *_shader);

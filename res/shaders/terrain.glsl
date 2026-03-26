@@ -39,10 +39,13 @@ in Varyings {
 } vary;
 
 
-uniform sampler2D u_tex;
+uniform sampler2D u_grass;
+uniform sampler2D u_rock;
+uniform sampler2D u_snow;
 uniform sampler2DShadow u_shadowMap;
 uniform vec3 u_lightPos;
 uniform bool u_isShadowEnabled;
+uniform float u_verticalScale;
 
 /**
     @return 0.f if fragment is in the shadow, else 1.f
@@ -71,7 +74,7 @@ void main() {
     vec3 lightDirection = normalize(u_lightPos);
     vec3 normal = normalize(vary.normal);
 
-    float ambient = 0.8f;
+    float ambient = 0.6f;
     float diffuse = 0.f;
 
     diffuse = max(0, dot(lightDirection, normal));
@@ -82,8 +85,27 @@ void main() {
     }
     float brightness = shadow * diffuse + ambient;
 
-    vec3 colour = texture(u_tex, vary.uvCoord).rgb;
-    // vec3 colour = vec3(0.44f, 0.33, 0.23f);
+    vec3 grass = texture(u_grass, vary.uvCoord).rgb;
+    vec3 rock = texture(u_rock, vary.uvCoord).rgb;
+    vec3 snow = texture(u_snow, vary.uvCoord).rgb;
+    float slope = dot(normal, vec3(0, 1.f, 0));
+    slope = 1.f - slope; // 0 -> flat | 1 -> steep
+
+    float yPos = vary.fragPos.y / u_verticalScale;
+
+    float h1 = smoothstep(110.0, 200.0, yPos);
+    float h2 = smoothstep(200.0, 240.0, yPos);
+
+    // Base color from height
+    vec3 baseColour = mix(grass, rock, h1);
+
+    vec3 snowAdjusted = mix(snow, rock, slope);
+    baseColour = mix(baseColour, snowAdjusted, h2);
+
+    // apply rocks depending on the slope
+    float slopeBlend = smoothstep(0.3, 0.8, slope);
+    vec3 colour = mix(baseColour, rock, slopeBlend);
+
 
     FragColor = vec4(colour * brightness, 1.f);
     // FragColor = vec4(normal * brightness, 1.f);

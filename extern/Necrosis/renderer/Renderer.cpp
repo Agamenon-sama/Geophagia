@@ -63,8 +63,8 @@ void Renderer::renderAll() const noexcept {
     for (auto it = _renderCommands.begin(); it != _renderCommands.end(); it++) {
         it->shader->use();
         if (_camera) {
-            it->shader->setMat4f("u_view", _camera->getViewMatrix());
-            it->shader->setMat4f("u_projection", _camera->getProjMatrix());
+            it->shader->setUniform("u_view", _camera->getViewMatrix());
+            it->shader->setUniform("u_projection", _camera->getProjMatrix());
         }
 
         it->renderable->render();

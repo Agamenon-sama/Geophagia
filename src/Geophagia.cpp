@@ -119,11 +119,10 @@ Geophagia::Geophagia()
         }
     });
 
-    auto texture = Necrosis::TextureManager::makeTextureFromFile("../res/textures/Soil_1.jpg");
-    slog::info("Texture loaded: {}x{}",
-        Necrosis::TextureManager::getTextureFromID(texture).getWidth(),
-        Necrosis::TextureManager::getTextureFromID(texture).getHeight()
-    );
+    _terrain.addTexture(Necrosis::TextureManager::makeTextureFromFile("../res/textures/grass.jpg"));
+    _terrain.addTexture(Necrosis::TextureManager::makeTextureFromFile("../res/textures/rock.jpg"));
+    _terrain.addTexture(Necrosis::TextureManager::makeTextureFromFile("../res/textures/snow.png"));
+
 
     _terrainShader = Necrosis::Shader::makeFromFile("../res/shaders/terrain.glsl");
     if (!_terrainShader) {
@@ -144,11 +143,12 @@ Geophagia::Geophagia()
     );
 
     // if (!_terrain.loadRawFromFile("../res/heightmap.raw")) {
-    if (!_terrain.loadImageFromFile("../res/Heightmap.png")) {
+    if (!_terrain.loadImageFromFile("../res/scan.png")) {
+    // if (!_terrain.loadImageFromFile("../res/Heightmap.png")) {
         exit(1);
     }
 
-    _terrain.setTexture(texture);
+    // _terrain.setTexture(texture);
 
     _voronoiGenerator = std::make_unique<VoronoiGenerator>(&_terrain);
     _fractalGenerator = std::make_unique<FractalGenerator>(&_terrain);
@@ -225,9 +225,9 @@ void Geophagia::_shadowMapPass() {
     );
 
     _shadowMapShader->use();
-    _shadowMapShader->setMat4f("u_projection", proj);
-    _shadowMapShader->setMat4f("u_view", view);
-    _shadowMapShader->setMat4f("u_model", _terrain.getModelMatrix());
+    _shadowMapShader->setUniform("u_projection", proj);
+    _shadowMapShader->setUniform("u_view", view);
+    _shadowMapShader->setUniform("u_model", _terrain.getModelMatrix());
 
     _terrain.render();
 
@@ -250,22 +250,24 @@ void Geophagia::_terrainPass() {
 
     // _renderer->renderAll();
     _terrainShader->use();
-    _terrainShader->setMat4f("u_projection", _camera.getProjMatrix());
-    _terrainShader->setMat4f("u_view", _camera.getViewMatrix());
-    _terrainShader->setMat4f("u_model", _terrain.getModelMatrix());
-    _terrainShader->setVec3f(
+    _terrainShader->setUniform("u_projection", _camera.getProjMatrix());
+    _terrainShader->setUniform("u_view", _camera.getViewMatrix());
+    _terrainShader->setUniform("u_model", _terrain.getModelMatrix());
+    _terrainShader->setUniform(
         "u_lightPos",
         _lightPosition * glm::vec3(_terrain.getWidth(), 255.f, _terrain.getDepth())
     );
-    _terrainShader->setMat4f("u_lightSpaceMatrix", lightSpaceMatrix);
-    _terrainShader->setBool("u_isShadowEnabled", _isShadowEnabled);
+    _terrainShader->setUniform("u_lightSpaceMatrix", lightSpaceMatrix);
+    _terrainShader->setUniform("u_isShadowEnabled", _isShadowEnabled);
+    _terrainShader->setUniform("u_verticalScale", _terrain.getVerticalScale());
 
-    _terrainShader->setInt("u_tex", 0);
+    _terrainShader->setUniform("u_grass", 0);
+    _terrainShader->setUniform("u_rock", 1);
+    _terrainShader->setUniform("u_snow", 2);
+
     auto shadowMapTex = _shadowMapFramebuffer->getTextureID();
-    // TODO: shouldn't expose opengl like this
-    glActiveTexture(GL_TEXTURE0 + 1);
-    glBindTexture(GL_TEXTURE_2D, shadowMapTex);
-    _terrainShader->setInt("u_shadowMap", 1);
+    _terrainShader->setUniform("u_shadowMap", 3);
+    _shadowMapFramebuffer->bindTexture(3);
 
     _terrain.render();
     _framebuffer->unbind();

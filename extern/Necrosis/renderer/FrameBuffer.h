@@ -17,7 +17,7 @@ public:
 
     void bind() const;
     void unbind() const;
-    void bindTexture(const u8 slot = 0) const;
+    void bindTexture(const u8 unit = 0) const;
 
     i32 getWidth() const;
     i32 getHeight() const;
@@ -27,6 +27,7 @@ public:
 private:
     u32 _id;
     u32 _texture;
+    u32 _sampler;
     glm::ivec4 _viewport;
     glm::ivec4 _defaultViewport;
 };

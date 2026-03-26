@@ -88,12 +88,13 @@ public:
 
     void uiRender();
 
-    void setTexture(Necrosis::TextureID texture) { _texture = texture; }
+    void addTexture(Necrosis::TextureID texture) { _textures.emplace_back(texture); }
 
     u32 getWidth() const { return _width; }
     u32 getDepth() const { return _depth; }
     std::vector<f32> getHeights() const { return _heights; }
     glm::mat4 getModelMatrix() const;
+    float getVerticalScale() const { return _scale.y; }
     // const u32* getHeightMap() const { return _heights; }
 
 private:
@@ -104,7 +105,7 @@ private:
     std::vector<f32> _heights;
     Necrosis::TextureID _imageView;
 
-    Necrosis::TextureID _texture;
+    std::vector<Necrosis::TextureID> _textures;
     Necrosis::TextureSampler _sampler;
     float _textureScale;
 

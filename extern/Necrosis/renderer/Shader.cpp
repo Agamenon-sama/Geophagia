@@ -8,7 +8,7 @@
 
 namespace Necrosis {
 
-std::shared_ptr<Shader> Shader::makeFromString(const std::string &source) {
+std::shared_ptr<Shader> Shader::makeFromString(const std::string &source, const std::string &name) {
     _log.setPrefix("Error::Shader: ");
 
     std::string vertexSource, fragmentSource;
@@ -95,22 +95,26 @@ std::shared_ptr<Shader> Shader::makeFromString(const std::string &source) {
     glDetachShader(id, fragment);
     glDeleteShader(fragment);
 
+    if (!name.empty()) {
+        glObjectLabel(GL_PROGRAM, id, -1, (name + std::string(" (Shader)")).c_str());
+    }
+
     return std::shared_ptr<Shader>(new Shader(id));
 }
 
-std::shared_ptr<Shader> Shader::makeFromFile(const std::string &path) {
+std::shared_ptr<Shader> Shader::makeFromFile(const std::filesystem::path &path) {
     _log.setPrefix("Error::Shader: ");
 
     std::fstream file(path, std::ios::in);
     if (!file.is_open()) {
-        _log("Can't open file " + path);
+        _log("Can't open file '{}'", path.string());
         return nullptr;
     }
 
     std::stringstream ss;
     ss << file.rdbuf();
 
-    return makeFromString(ss.str());
+    return makeFromString(ss.str(), path.stem());
 }
 
 Shader::Shader(uint32_t id) : _id(id) {}
@@ -124,29 +128,65 @@ void Shader::use() const{
     glUseProgram(_id);
 }
 
-void Shader::setBool(const std::string &name, bool value) const {
-    use();
-    glUniform1i(glGetUniformLocation(_id, name.c_str()), (int) value);
+int Shader::getUniformLocation(const std::string &name) {
+    auto it = _uniformLocations.find(name);
+    if (it != _uniformLocations.end()) {
+        return it->second;
+    }
+
+    auto location = glGetUniformLocation(_id, name.c_str());
+    if (location == -1) {
+        slog::debug("Failed to get uniform location for '{}'", name);
+    }
+    _uniformLocations[name] = location;
+
+    return location;
 }
 
-void Shader::setInt(const std::string &name, int value) const {
-    use();
-    glUniform1i(glGetUniformLocation(_id, name.c_str()), value);
+
+void Shader::setUniform(const std::string &name, bool value) {
+    // use();
+    auto location = getUniformLocation(name);
+
+    if (location != -1) {
+        glUniform1i(location, (int) value);
+    }
 }
 
-void Shader::setFloat(const std::string &name, float value) const {
-    use();
-    glUniform1f(glGetUniformLocation(_id, name.c_str()), value);
+void Shader::setUniform(const std::string &name, int value) {
+    // use();
+    auto location = getUniformLocation(name);
+
+    if (location != -1) {
+        glUniform1i(location, value);
+    }
 }
 
-void Shader::setVec3f(const std::string &name, glm::vec3 value) const {
-    use();
-    glUniform3f(glGetUniformLocation(_id, name.c_str()), value[0], value[1], value[2]);
+void Shader::setUniform(const std::string &name, float value) {
+    // use();
+    auto location = getUniformLocation(name);
+
+    if (location != -1) {
+        glUniform1f(location, value);
+    }
 }
 
-void Shader::setMat4f(const std::string &name, glm::mat4 value) const {
-    use();
-    glUniformMatrix4fv(glGetUniformLocation(_id, name.c_str()), 1, GL_FALSE, &value[0][0]); // glm::value_ptr is also possible
+void Shader::setUniform(const std::string &name, glm::vec3 value) {
+    // use();
+    auto location = getUniformLocation(name);
+
+    if (location != -1) {
+        glUniform3f(location, value[0], value[1], value[2]);
+    }
+}
+
+void Shader::setUniform(const std::string &name, glm::mat4 value) {
+    // use();
+    auto location = getUniformLocation(name);
+
+    if (location != -1) {
+        glUniformMatrix4fv(location, 1, GL_FALSE, &value[0][0]);
+    }
 }
 
 }
