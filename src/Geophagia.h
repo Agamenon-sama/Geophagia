@@ -33,9 +33,10 @@ private:
     Necrosis::InputManager _input;
     std::shared_ptr<Necrosis::Shader> _terrainShader;
     std::shared_ptr<Necrosis::Shader> _shadowMapShader;
+    glm::vec3 _lightPosition;
     bool _isFramebufferHovered;
     bool _isShadowEnabled;
-    glm::vec3 _lightPosition;
+    bool _isBoxMappingEnabled;
 
     std::unique_ptr<Necrosis::Framebuffer> _framebuffer;
     std::unique_ptr<Necrosis::Framebuffer> _shadowMapFramebuffer;

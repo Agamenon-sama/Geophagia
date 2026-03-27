@@ -14,7 +14,7 @@
 namespace Geophagia {
 
 Terrain::Terrain() : _width(256), _depth(256), _scale(1.f, 0.25f, 1.f)
-    , _sampler(Necrosis::TextureSampler(Necrosis::FilterType::LinearMipmap, Necrosis::WrapMode::Mirror, 16.f, "Terrain sampler"))
+    , _sampler(Necrosis::TextureSampler(Necrosis::FilterType::LinearMipmap, Necrosis::WrapMode::Repeat, 16.f, "Terrain sampler"))
     , _textureScale(1.f), _renderer(std::make_unique<TerrainRenderer>()) {
 
     _heights.resize(_width * _depth, 0.f);
@@ -33,7 +33,7 @@ Terrain::Terrain() : _width(256), _depth(256), _scale(1.f, 0.25f, 1.f)
 
 Terrain::Terrain(const u32 width, const u32 depth)
     : _width(width), _depth(depth)
-    , _sampler(Necrosis::TextureSampler(Necrosis::FilterType::LinearMipmap, Necrosis::WrapMode::Mirror, 16.f, "Terrain sampler"))
+    , _sampler(Necrosis::TextureSampler(Necrosis::FilterType::LinearMipmap, Necrosis::WrapMode::Repeat, 16.f, "Terrain sampler"))
     , _textureScale(1.f), _renderer(std::make_unique<TerrainRenderer>()) {
 
     _heights.resize(_width * _depth);

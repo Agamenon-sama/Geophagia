@@ -36,6 +36,7 @@ void Geophagia::uiRender() {
         ImGui::SliderFloat("Z position", &_lightPosition[2], -0.5f, 0.5f);
 
         ImGui::Checkbox("Shadow", &_isShadowEnabled);
+        ImGui::Checkbox("Box mapping", &_isBoxMappingEnabled);
 
     ImGui::End();
 }
@@ -100,8 +101,8 @@ void Geophagia::renderDockSpace() {
 
 Geophagia::Geophagia()
         : Necrosis::Engine({ .windowTitle = "Geophagia", .windowWidth = 1600, .windowHeight = 900 })
-        , _camera(glm::vec3(10.f, 50.f, 25.f)), _isFramebufferHovered(false)
-        , _isShadowEnabled(true), _lightPosition(0.4f, 0.4f, 0.5f) {
+        , _camera(glm::vec3(10.f, 50.f, 25.f)), _lightPosition(0.4f, 0.4f, 0.5f)
+        ,_isFramebufferHovered(false) , _isShadowEnabled(true), _isBoxMappingEnabled(true) {
 
     _camera.movementSpeed = 0.05f;
     _camera.near = 1.f;
@@ -259,6 +260,7 @@ void Geophagia::_terrainPass() {
     );
     _terrainShader->setUniform("u_lightSpaceMatrix", lightSpaceMatrix);
     _terrainShader->setUniform("u_isShadowEnabled", _isShadowEnabled);
+    _terrainShader->setUniform("u_isBoxMappingEnabled", _isBoxMappingEnabled);
     _terrainShader->setUniform("u_verticalScale", _terrain.getVerticalScale());
 
     _terrainShader->setUniform("u_grass", 0);

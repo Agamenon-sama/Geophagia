@@ -45,6 +45,7 @@ uniform sampler2D u_snow;
 uniform sampler2DShadow u_shadowMap;
 uniform vec3 u_lightPos;
 uniform bool u_isShadowEnabled;
+uniform bool u_isBoxMappingEnabled;
 uniform float u_verticalScale;
 
 /**
@@ -70,6 +71,17 @@ float inTheShadow(vec4 lightSpacePosition) {
     return visibility / 9.f;
 }
 
+vec4 boxmap(sampler2D s, vec3 p, vec3 n) {
+    vec4 x = texture(s, p.yz);
+    vec4 y = texture(s, p.zx);
+    vec4 z = texture(s, p.xy);
+
+    vec3 weights = pow(abs(n), vec3(8.f));
+    weights /= weights.x + weights.y + weights.z;
+
+    return x * weights.x + y * weights.y + z * weights.z;
+}
+
 void main() {
     vec3 lightDirection = normalize(u_lightPos);
     vec3 normal = normalize(vary.normal);
@@ -85,9 +97,21 @@ void main() {
     }
     float brightness = shadow * diffuse + ambient;
 
-    vec3 grass = texture(u_grass, vary.uvCoord).rgb;
-    vec3 rock = texture(u_rock, vary.uvCoord).rgb;
-    vec3 snow = texture(u_snow, vary.uvCoord).rgb;
+    vec3 grass;
+    vec3 rock;
+    vec3 snow;
+
+    if (u_isBoxMappingEnabled) {
+        grass = boxmap(u_grass, vary.fragPos / 50.f, normal).rgb;
+        rock = boxmap(u_rock, vary.fragPos / 50.f, normal).rgb;
+        snow = boxmap(u_snow, vary.fragPos / 50.f, normal).rgb;
+    }
+    else {
+        grass = texture(u_grass, vary.uvCoord).rgb;
+        rock = texture(u_rock, vary.uvCoord).rgb;
+        snow = texture(u_snow, vary.uvCoord).rgb;
+    }
+
     float slope = dot(normal, vec3(0, 1.f, 0));
     slope = 1.f - slope; // 0 -> flat | 1 -> steep
 
