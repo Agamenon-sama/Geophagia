@@ -102,7 +102,7 @@ void Geophagia::renderDockSpace() {
 Geophagia::Geophagia()
         : Necrosis::Engine({ .windowTitle = "Geophagia", .windowWidth = 1600, .windowHeight = 900 })
         , _camera(glm::vec3(10.f, 50.f, 25.f)), _lightPosition(0.4f, 0.4f, 0.5f)
-        ,_isFramebufferHovered(false) , _isShadowEnabled(true), _isBoxMappingEnabled(true) {
+        ,_isFramebufferHovered(false) , _isShadowEnabled(true), _isBoxMappingEnabled(false) {
 
     _camera.movementSpeed = 0.05f;
     _camera.near = 1.f;
@@ -123,6 +123,10 @@ Geophagia::Geophagia()
     _terrain.addTexture(Necrosis::TextureManager::makeTextureFromFile("../res/textures/grass.jpg"));
     _terrain.addTexture(Necrosis::TextureManager::makeTextureFromFile("../res/textures/rock.jpg"));
     _terrain.addTexture(Necrosis::TextureManager::makeTextureFromFile("../res/textures/snow.png"));
+
+    _terrain.addTexture(Necrosis::TextureManager::makeTextureFromFile("../res/textures/grass_normal.jpg"));
+    _terrain.addTexture(Necrosis::TextureManager::makeTextureFromFile("../res/textures/rock_normal.jpg"));
+    _terrain.addTexture(Necrosis::TextureManager::makeTextureFromFile("../res/textures/snow_normal.png"));
 
 
     _terrainShader = Necrosis::Shader::makeFromFile("../res/shaders/terrain.glsl");
@@ -266,10 +270,13 @@ void Geophagia::_terrainPass() {
     _terrainShader->setUniform("u_grass", 0);
     _terrainShader->setUniform("u_rock", 1);
     _terrainShader->setUniform("u_snow", 2);
+    _terrainShader->setUniform("u_grass_normal", 3);
+    _terrainShader->setUniform("u_rock_normal", 4);
+    _terrainShader->setUniform("u_snow_normal", 5);
 
     auto shadowMapTex = _shadowMapFramebuffer->getTextureID();
-    _terrainShader->setUniform("u_shadowMap", 3);
-    _shadowMapFramebuffer->bindTexture(3);
+    _terrainShader->setUniform("u_shadowMap", 6);
+    _shadowMapFramebuffer->bindTexture(6);
 
     _terrain.render();
     _framebuffer->unbind();

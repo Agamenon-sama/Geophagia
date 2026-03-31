@@ -20,6 +20,7 @@ TerrainRenderer::TerrainRenderer() {
     layout.push(GL_FLOAT, 3);
     layout.push(GL_FLOAT, 3);
     layout.push(GL_FLOAT, 2);
+    layout.push(GL_FLOAT, 3);
     _vao->addBuffer(*_vbo, layout);
 
     _vao->unbind();
@@ -136,6 +137,11 @@ void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32
                 {
                     textureScale * static_cast<f32>(x)/static_cast<f32>(width),
                     textureScale * static_cast<f32>(z)/static_cast<f32>(depth)
+                },
+                {
+                    1.f,
+                    x >= width - 1 ? 0.f : heights[z * width + x + 1],
+                    0.f
                 }
             );
 

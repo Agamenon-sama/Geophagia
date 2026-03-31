@@ -15,7 +15,7 @@ namespace Geophagia {
 
 Terrain::Terrain() : _width(256), _depth(256), _scale(1.f, 0.25f, 1.f)
     , _sampler(Necrosis::TextureSampler(Necrosis::FilterType::LinearMipmap, Necrosis::WrapMode::Repeat, 16.f, "Terrain sampler"))
-    , _textureScale(1.f), _renderer(std::make_unique<TerrainRenderer>()) {
+    , _textureScale(10.f), _renderer(std::make_unique<TerrainRenderer>()) {
 
     _heights.resize(_width * _depth, 0.f);
 
@@ -32,9 +32,9 @@ Terrain::Terrain() : _width(256), _depth(256), _scale(1.f, 0.25f, 1.f)
 }
 
 Terrain::Terrain(const u32 width, const u32 depth)
-    : _width(width), _depth(depth)
+    : _width(width), _depth(depth), _scale(1.f, 0.25f, 1.f)
     , _sampler(Necrosis::TextureSampler(Necrosis::FilterType::LinearMipmap, Necrosis::WrapMode::Repeat, 16.f, "Terrain sampler"))
-    , _textureScale(1.f), _renderer(std::make_unique<TerrainRenderer>()) {
+    , _textureScale(10.f), _renderer(std::make_unique<TerrainRenderer>()) {
 
     _heights.resize(_width * _depth);
 
@@ -205,7 +205,7 @@ void Terrain::uiRender() {
     ImGui::Begin("Terrain");
         ImGui::InputScalar("Width", ImGuiDataType_U32, &_width, &step, &fastStep);
         ImGui::InputScalar("Depth", ImGuiDataType_U32, &_depth, &step, &fastStep);
-        ImGui::SliderFloat("Texture scale", &_textureScale, 0.1f, 10.f);
+        ImGui::SliderFloat("Texture scale", &_textureScale, 0.1f, 20.f);
         ImGui::SliderFloat3("Scale", glm::value_ptr(_scale), 0.f, 2.f);
     ImGui::End();
 }
