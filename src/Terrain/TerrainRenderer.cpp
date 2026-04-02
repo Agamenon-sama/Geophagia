@@ -61,7 +61,7 @@ void TerrainRenderer::render() const {
 
 [[nodiscard]]
 glm::vec3 generateNormal(u32 x, u32 z, const std::vector<f32> &heights, u32 width, u32 depth) {
-    assert(x < width && z < depth || "Invalid coordinate for normal generation");
+    expect((x < width) && (z < depth), "Invalid coordinate for normal generation");
     auto getHeight = [&](i32 x, i32 z) {
         x = std::clamp(x, 0, static_cast<i32>(width) - 1);
         z = std::clamp(z, 0, static_cast<i32>(depth) - 1);
@@ -91,7 +91,7 @@ glm::vec3 generateNormal(u32 x, u32 z, const std::vector<f32> &heights, u32 widt
 
 [[nodiscard]]
 glm::vec3 generateNormalFast(u32 x, u32 z, const std::vector<f32> &heights, u32 width, u32 depth) {
-    assert(x < width && z < depth || "Invalid coordinate for normal generation");
+    expect((x < width) && (z < depth), "Invalid coordinate for normal generation");
     auto getHeight = [&](i32 x, i32 z) {
         x = std::clamp(x, 0, static_cast<i32>(width) - 1);
         z = std::clamp(z, 0, static_cast<i32>(depth) - 1);
@@ -106,7 +106,7 @@ glm::vec3 generateNormalFast(u32 x, u32 z, const std::vector<f32> &heights, u32 
     return glm::normalize(glm::vec3(hL - hR, 2.f, hU - hD));
 }
 
-void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32 width, const u32 depth, const float textureScale) const {
+void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32 width, const u32 depth, const float textureScale, const float mapScale) const {
     if (width == 0 || depth == 0) { return; }
 
     // create the buffers that will be uploaded to the GPU
@@ -125,14 +125,18 @@ void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32
         for (u32 x = 0; x < width; x++) {
             float y = heights[z * width + x];
 
+            auto pos = glm::vec3((f32)x / (f32)width, y, (f32)z / (f32)depth);
+            pos = glm::vec3(pos.x * 2.f - 1.f, pos.y, pos.z * 2.f - 1.f);
+            pos *= glm::vec3((f32)mapScale, 1.f, (f32)mapScale);
             auto normal = generateNormal(x, z, heights, width, depth);
 
             vertices[index] = Necrosis::Vertex(
-                {
-                    static_cast<f32>(x) - static_cast<f32>(width) / 2.f,
-                    y,
-                    static_cast<f32>(z) - static_cast<f32>(depth) / 2.f
-                },
+                pos,
+                // {
+                //     (static_cast<f32>(x) - static_cast<f32>(width) / 2.f),
+                //     y,
+                //     (static_cast<f32>(z) - static_cast<f32>(depth) / 2.f)
+                // },
                 normal,
                 {
                     textureScale * static_cast<f32>(x)/static_cast<f32>(width),

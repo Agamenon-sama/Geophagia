@@ -100,7 +100,19 @@ public:
 private:
     u32 _width;
     u32 _depth;
+    /**
+     * @brief Visual scale of the mesh in world space
+     *
+     * Used to construct the model matrix. It's stored here because this information
+     * is useful for the shader
+     */
     glm::vec3 _scale;
+    /**
+     * @brief Multiplier that determines the size of the in world
+     *
+     * It determines the scale of the numbers set in the vertices
+     */
+    float _mapScale;
 
     std::vector<f32> _heights;
     Necrosis::TextureID _imageView;

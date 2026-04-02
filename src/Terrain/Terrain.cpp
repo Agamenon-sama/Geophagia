@@ -13,13 +13,13 @@
 
 namespace Geophagia {
 
-Terrain::Terrain() : _width(256), _depth(256), _scale(1.f, 0.25f, 1.f)
+Terrain::Terrain() : _width(256), _depth(256), _scale(1.f, 0.25f, 1.f), _mapScale(100.f)
     , _sampler(Necrosis::TextureSampler(Necrosis::FilterType::LinearMipmap, Necrosis::WrapMode::Repeat, 16.f, "Terrain sampler"))
     , _textureScale(10.f), _renderer(std::make_unique<TerrainRenderer>()) {
 
     _heights.resize(_width * _depth, 0.f);
 
-    _renderer->updateBuffers(_heights, _width, _depth, _textureScale);
+    _renderer->updateBuffers(_heights, _width, _depth, _textureScale, _mapScale);
 
     // set the image view of the heightmap
     std::vector<u8> image(_width * _depth);
@@ -32,7 +32,7 @@ Terrain::Terrain() : _width(256), _depth(256), _scale(1.f, 0.25f, 1.f)
 }
 
 Terrain::Terrain(const u32 width, const u32 depth)
-    : _width(width), _depth(depth), _scale(1.f, 0.25f, 1.f)
+    : _width(width), _depth(depth), _scale(1.f, 0.25f, 1.f), _mapScale(100.f)
     , _sampler(Necrosis::TextureSampler(Necrosis::FilterType::LinearMipmap, Necrosis::WrapMode::Repeat, 16.f, "Terrain sampler"))
     , _textureScale(10.f), _renderer(std::make_unique<TerrainRenderer>()) {
 
@@ -43,7 +43,7 @@ Terrain::Terrain(const u32 width, const u32 depth)
     }
 
     // set the buffer that contains the heightmap mesh
-    _renderer->updateBuffers(_heights, _width, _depth, _textureScale);
+    _renderer->updateBuffers(_heights, _width, _depth, _textureScale, _mapScale);
 
     // set the image view of the heightmap
     std::vector<u8> image(_width * _depth);
@@ -94,7 +94,7 @@ bool Terrain::loadRawFromMemory(const std::vector<f32> &heights, const u32 width
     _width = width;
     _depth = depth;
 
-    _renderer->updateBuffers(_heights, _width, _depth, _textureScale);
+    _renderer->updateBuffers(_heights, _width, _depth, _textureScale, _mapScale);
     _updateImageView();
     return true;
 }
@@ -149,7 +149,7 @@ bool Terrain::loadRawFromFile(const std::filesystem::path &path) {
         return false;
     }
 
-    _renderer->updateBuffers(_heights, _width, _depth, _textureScale);
+    _renderer->updateBuffers(_heights, _width, _depth, _textureScale, _mapScale);
     _updateImageView();
     return true;
 }
@@ -183,7 +183,7 @@ bool Terrain::loadImageFromFile(const std::filesystem::path &path) {
     }
 
     stbi_image_free(imageBuffer);
-    _renderer->updateBuffers(_heights, _width, _depth, _textureScale);
+    _renderer->updateBuffers(_heights, _width, _depth, _textureScale, _mapScale);
     _updateImageView();
     return true;
 }
@@ -207,6 +207,7 @@ void Terrain::uiRender() {
         ImGui::InputScalar("Depth", ImGuiDataType_U32, &_depth, &step, &fastStep);
         ImGui::SliderFloat("Texture scale", &_textureScale, 0.1f, 20.f);
         ImGui::SliderFloat3("Scale", glm::value_ptr(_scale), 0.f, 2.f);
+        ImGui::InputFloat("Map scale", &_mapScale);
     ImGui::End();
 }
 

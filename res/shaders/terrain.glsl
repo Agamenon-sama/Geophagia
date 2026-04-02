@@ -242,6 +242,15 @@ void main() {
     vec3 lightDirection = normalize(u_lightPos);
     vec3 normal = normalize(vary.normal);
     float ambient = 0.6f;
+//    float diffuse = 0.f;
+//
+//    diffuse = max(0, dot(lightDirection, normal));
+//
+//    float shadow = 1.f;
+//    if (u_isShadowEnabled) {
+//        shadow = inTheShadow(vary.fragPosLightSpace);
+//    }
+//    float brightness = shadow * diffuse + ambient;
 
     vec3 colour;
 
