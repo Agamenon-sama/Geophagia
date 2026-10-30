@@ -26,7 +26,7 @@ private:
     float _depositionConstant = 0.5f;
     float _evaporationConstant = 0.05f;
     float _flowInertia = 0.5f;
-    int _erosionRadius = 6;
+    int _erosionRadius = 3;
 
     // simulation data
     std::vector<float> _heightmap;

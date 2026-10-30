@@ -148,16 +148,18 @@ Geophagia::Geophagia()
     );
 
     // if (!_terrain.loadRawFromFile("../res/heightmap.raw")) {
-    if (!_terrain.loadImageFromFile("../res/scan.png")) {
+    // if (!_terrain.loadImageFromFile("../res/scan.png")) {
     // if (!_terrain.loadImageFromFile("../res/Heightmap.png")) {
-        exit(1);
-    }
+    //     exit(1);
+    // }
 
     // _terrain.setTexture(texture);
 
     _voronoiGenerator = std::make_unique<VoronoiGenerator>(&_terrain);
     _fractalGenerator = std::make_unique<FractalGenerator>(&_terrain);
     _erosionGenerator = std::make_unique<ErosionGenerator>(&_terrain);
+
+    _skybox = std::make_unique<Necrosis::Skybox>(_camera);
 }
 
 void Geophagia::run() {
@@ -279,6 +281,7 @@ void Geophagia::_terrainPass() {
     _shadowMapFramebuffer->bindTexture(6);
 
     _terrain.render();
+    _skybox->render();
     _framebuffer->unbind();
 }
 

@@ -1,6 +1,6 @@
 #include "TerrainRenderer.h"
 
-#include <iostream>
+#include <chrono>
 
 #include <glad/glad.h>
 
@@ -180,6 +180,42 @@ void TerrainRenderer::updateBuffers(const std::vector<float> &heights, const u32
         }
     }
     assert(index == indices.size() && "error when populating the indices buffer for the terrain");
+
+    // std::vector<glm::vec3> normals(width * depth);
+    // std::vector<glm::vec3> fastNormals(width * depth);
+    //
+    // slog::info("Started measuring normal computation for terrain of size {}x{}", width, depth);
+    // auto start = std::chrono::high_resolution_clock::now();
+    //
+    // for (u32 z = 0; z < depth; z++) {
+    //     for (u32 x = 0; x < width; x++) {
+    //         normals.emplace_back(generateNormal(x, z, heights, width, depth));
+    //     }
+    // }
+    // auto time1 = std::chrono::high_resolution_clock::now();
+    // for (u32 z = 0; z < depth; z++) {
+    //     for (u32 x = 0; x < width; x++) {
+    //         fastNormals.emplace_back(generateNormalFast(x, z, heights, width, depth));
+    //     }
+    // }
+    // auto time2 = std::chrono::high_resolution_clock::now();
+    //
+    // auto duration1 = std::chrono::duration_cast<std::chrono::milliseconds>(time1 - start);
+    // auto duration2 = std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1);
+    //
+    // slog::info("Normal time: {}ms", duration1.count());
+    // slog::info("Fast Normal time: {}ms", duration2.count());
+    //
+    // float totalAngleError = 0.f;
+    // for (int i = 0; i < normals.size(); i++) {
+    //     // auto cosTheta = glm::dot(normals[i], fastNormals[i]);
+    //     auto cosTheta = glm::clamp(glm::dot(normals[i], fastNormals[i]), -1.0f, 1.0f);
+    //     auto angle = glm::acos(cosTheta);
+    //
+    //     totalAngleError += angle;
+    // }
+
+    // slog::info("The accumulated similarity is {:.3f}", totalAngleError / (normals.size()));
 
     // send data to the GPU
     _vao->bind();

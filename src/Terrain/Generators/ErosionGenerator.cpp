@@ -464,7 +464,7 @@ void ErosionGenerator::generateHeightmap() {
                     }
                 }
 
-                velocity = std::sqrt(std::max(0.f, velocity * velocity + deltaHeight * gravity));
+                velocity = std::sqrt(std::max(0.f, velocity * velocity - deltaHeight * gravity));
                 water *= (1.f - _evaporationConstant);
 
                 // if any of these are not valid => HELL ON EARTH
@@ -484,7 +484,7 @@ void ErosionGenerator::generateHeightmap() {
         for (int i = 0; i < 2; i++) {
             for (int z = 0; z < depth; z++) {
                 for (int x = 0; x < width; x++) {
-                    smoothPatch(_heightmap, width, depth, {x, z}, 0.5f);
+                    smoothPatch(_heightmap, width, depth, {x, z}, 0.3f);
                 }
             }
         }

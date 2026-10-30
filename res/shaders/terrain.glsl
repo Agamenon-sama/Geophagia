@@ -175,19 +175,19 @@ vec3 colourWithUV(float ambient, vec3 lightDirection, vec3 normal) {
     }
     float brightness = shadow * diffuse + ambient;
 
-    return colour * brightness;
+    return colour;// * brightness;
 }
 
 vec3 colourWithBoxMapping(float ambient, vec3 lightDirection, vec3 normal) {
     // sample textures
-    vec3 grass = boxmap(u_grass, vary.fragPos / 50.f, normal).rgb;
-    vec3 rock = boxmap(u_rock, vary.fragPos / 50.f, normal).rgb;
-    vec3 snow = boxmap(u_snow, vary.fragPos / 50.f, normal).rgb;
+    vec3 grass = boxmap(u_grass, vary.fragPos / 25.f, normal).rgb;
+    vec3 rock = boxmap(u_rock, vary.fragPos / 25.f, normal).rgb;
+    vec3 snow = boxmap(u_snow, vary.fragPos / 25.f, normal).rgb;
 
     // compute normals
-    vec3 grassNormal = boxmapNormal(u_grass_normal, vary.fragPos / 50.f, normal);
-    vec3 rockNormal  = boxmapNormal(u_rock_normal,  vary.fragPos / 50.f, normal);
-    vec3 snowNormal  = boxmapNormal(u_snow_normal,  vary.fragPos / 50.f, normal);
+    vec3 grassNormal = boxmapNormal(u_grass_normal, vary.fragPos / 25.f, normal);
+    vec3 rockNormal  = boxmapNormal(u_rock_normal,  vary.fragPos / 25.f, normal);
+    vec3 snowNormal  = boxmapNormal(u_snow_normal,  vary.fragPos / 25.f, normal);
 
     // blend textures
     float slope = dot(normal, vec3(0, 1.f, 0));
@@ -235,24 +235,24 @@ vec3 colourWithBoxMapping(float ambient, vec3 lightDirection, vec3 normal) {
     }
     float brightness = shadow * diffuse + ambient;
 
-    return colour * brightness;
+    return colour;// * brightness;
 }
 
 void main() {
     vec3 lightDirection = normalize(u_lightPos);
     vec3 normal = normalize(vary.normal);
     float ambient = 0.6f;
-//    float diffuse = 0.f;
-//
-//    diffuse = max(0, dot(lightDirection, normal));
-//
-//    float shadow = 1.f;
-//    if (u_isShadowEnabled) {
-//        shadow = inTheShadow(vary.fragPosLightSpace);
-//    }
-//    float brightness = shadow * diffuse + ambient;
+    float diffuse = 0.f;
 
-    vec3 colour;
+    diffuse = max(0, dot(lightDirection, normal));
+
+    float shadow = 1.f;
+    if (u_isShadowEnabled) {
+        shadow = inTheShadow(vary.fragPosLightSpace);
+    }
+    float brightness = shadow * diffuse + ambient;
+
+    vec3 colour;// = texture(u_rock, vary.uvCoord).xyz;
 
     if (u_isBoxMappingEnabled) {
         colour = colourWithBoxMapping(ambient, lightDirection, normal);
@@ -261,6 +261,8 @@ void main() {
         colour = colourWithUV(ambient, lightDirection, normal);
     }
 
-    FragColor = vec4(colour, 1.f);
-//     FragColor = vec4(normal * brightness, 1.f);
+//    FragColor = vec4(colour, 1.f);
+//    FragColor = vec4(normal * brightness, 1.f);
+//    FragColor = vec4(vec3(0.5f) * brightness, 1.f);
+    FragColor = vec4(colour * brightness, 1.f);
 }

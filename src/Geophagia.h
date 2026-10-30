@@ -8,6 +8,7 @@
 #include <Necrosis/scene/Camera.h>
 #include <Necrosis/renderer/Texture.h>
 #include <Necrosis/renderer/FrameBuffer.h>
+#include <Necrosis/renderer/Skybox.h>
 
 #include "Terrain/Terrain.h"
 #include "Terrain/Generators/VoronoiGenerator.h"
@@ -31,6 +32,7 @@ private:
     std::unique_ptr<Necrosis::EventManager> _eventManager;
     Necrosis::Camera _camera;
     Necrosis::InputManager _input;
+    std::unique_ptr<Necrosis::Skybox> _skybox;
     std::shared_ptr<Necrosis::Shader> _terrainShader;
     std::shared_ptr<Necrosis::Shader> _shadowMapShader;
     glm::vec3 _lightPosition;

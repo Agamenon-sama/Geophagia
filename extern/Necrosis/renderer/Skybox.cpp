@@ -151,8 +151,9 @@ void Skybox::render() const {
 
     glm::mat4 shift = glm::mat4(1.f);
     shift = glm::translate(shift, _camera.position);
-    _shader->setUniform("u_translate", shift);
+    _shader->setUniform("u_model", shift);
 
+    glBindSampler(0, 0); // use the cubemap's inner tex params (mipmapping causes seams)
     glBindTexture(GL_TEXTURE_CUBE_MAP, _texture);
     // renderer.render(*_vao, *_vbo, *_shader);
     _vao->bind();
